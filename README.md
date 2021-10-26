@@ -1,5 +1,5 @@
 # Alô quem fala?
-Este é um trabalho de engenharia de software no qual nos comprometemos a desenvolver um serviço de encontro e comunicação para ser utilizado entre porteiros e vigias. 
+Este é um trabalho de engenharia de software no qual nos comprometemos a desenvolver um serviço de encontro e comunicação para ser utilizado entre porteiros e vigias.  
 Vigias e porteiros muitas vezes trabalham por longas horas e sozinhos, podendo passar toda madrugada em sua cabine em uma noite inteira, esperamos que, com esse projeto, possa se encontrar uma saída simples e rápida para encontrar pessoas em situações semelhantes de emprego e com interesses semelhantes para fazerem companhia nessas horas de pouco movimento.
 
 ## Grupo:
