@@ -3,10 +3,10 @@ Este é um trabalho de engenharia de software no qual nos comprometemos a desenv
 Vigias e porteiros muitas vezes trabalham por longas horas e sozinhos, podendo passar toda madrugada em sua cabine por toda uma noite. Esperamos que, com esse projeto, possa se encontrar uma saída simples e rápida para encontrar pessoas em situações semelhantes de emprego e com interesses semelhantes para se fazerem companhia nessas horas de pouco movimento.
 
 ## Grupo:
-Nome: Caio Alves Caldeira | Matrícula: 2017068734
-Nome: Luiz Henrique | Matrícula: 2018113555
-Nome: Nathan Nogueira | Matrícula: 2017086023
-Nome: Victor Vieira | Matrícula: 2018054346
+Nome: Caio Alves Caldeira | Matrícula: 2017068734  
+Nome: Luiz Henrique | Matrícula: 2018113555  
+Nome: Nathan Nogueira | Matrícula: 2017086023  
+Nome: Victor Vieira | Matrícula: 2018054346  
 
 ## Tema: Rede Social para Porteiros
 Requisitos Funcionais:
