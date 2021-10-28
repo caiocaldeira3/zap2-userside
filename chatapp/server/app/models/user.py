@@ -13,6 +13,7 @@ class User (db.Model):
 
     # Identification Data: email & password
     email           : db.String = db.Column(db.String(128), nullable=False, unique=True)
+    telephone       : db.String = db.Column(db.String(15), nullable=False, unique=True)
     password        : db.String = db.Column(db.String(192), nullable=False)
 
     date_created    : db.DateTime = db.Column(db.DateTime, default=db.func.current_timestamp())
@@ -21,11 +22,9 @@ class User (db.Model):
     )
 
     # Extra Information
-    telephone       : db.String = db.Column(db.String(15), nullable=True)
     description     : db.Text = db.Column(db.Text(500), nullable=True)
 
     # Foreign Keys
-    messages        : any = db.relationship("Message", backref='sender')
     chats           : any = db.relationship(
         "Chat", secondary=user_chat, backref=db.backref("users", lazy="dynamic")
     )

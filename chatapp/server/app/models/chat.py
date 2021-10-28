@@ -4,7 +4,7 @@ from app import db
 class Chat (db.Model):
 
     __tablename__   : str = "chat"
-    id              : db.Integer = db.Column(db.Integer, primary_key=True)
+    chat_id         : db.Integer = db.Column(db.Integer, primary_key=True)
 
     # Chat Name
     name            : db.String = db.Column(db.String(128), nullable=False)
@@ -16,9 +16,6 @@ class Chat (db.Model):
 
     # Extra Information
     description     : db.Text = db.Column(db.Text(500), nullable=True)
-
-    # Foreign Keys
-    messages        : any = db.relationship("Message", backref='channel')
 
     def __repr__ (self) -> str:
         return f"<Chat {self.name}>"

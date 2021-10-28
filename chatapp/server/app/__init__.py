@@ -30,17 +30,14 @@ migrate = Migrate(app, db)
 
 # Import a module / component using its blueprint handler variable (mod_auth)
 
-from app.models.message import Message
-from app.models.chat import Chat
-from app.models.user import User
+from app.modules.auth.controller import mod_auth as auth_module
+from app.modules.chat.controller import mod_chat as chat_module
+from app.modules.user.controller import mod_user as user_module
 
 # Register blueprint(s)
-# app.register_blueprint(anm_module)
-# app.register_blueprint(apply_module)
-# app.register_blueprint(auth_module)
-# app.register_blueprint(org_module)
-# app.register_blueprint(user_module)
-# app.register_blueprint(xyz_module)
+app.register_blueprint(auth_module)
+app.register_blueprint(user_module)
+app.register_blueprint(chat_module)
 # ..
 
 # Build the database:
