@@ -4,7 +4,6 @@ from cryptography.hazmat.backends.openssl.x25519 import _X25519PrivateKey, _X255
 from crypto import *
 
 class keyzeds (object):
-
     def private_keys (self) -> dict[str, _X25519PrivateKey]:
         return self.__dict__
 

@@ -1,3 +1,5 @@
+import os
+import dotenv
 import base64
 
 from typing import Union
@@ -9,6 +11,12 @@ from cryptography.hazmat.backends.openssl.x25519 import _X25519PrivateKey, _X255
 from cryptography.hazmat.backends import default_backend
 
 from Crypto.Cipher import AES
+
+from pathlib import Path
+
+base_path = Path(__file__).resolve().parent.parent.parent
+
+dotenv.load_dotenv(base_path / ".env", override=False)
 
 class SymmetricRatchet(object):
     def __init__ (self, key: bytes):
@@ -23,6 +31,9 @@ class SymmetricRatchet(object):
 
 def decode_b64 (msg: bytes) -> str:
     return base64.encodebytes(msg).decode("utf-8").strip()
+
+def encode_b64 (msg: str) -> bytes:
+    return base64.b64decode(msg)
 
 def pad (msg: bytes) -> bytes:
     # pkcs7 padding
@@ -98,3 +109,21 @@ def rcv_msg (
     key, init_vector = ratchets["rcv_ratchet"].next()
 
     return unpad(AES.new(key, AES.MODE_CBC, init_vector).decrypt(cipher))
+
+def save_private_key (name: str, pvtkey: _X25519PrivateKey) -> None:
+    with open(base_path / f"app/util/encrypted_keys/{name}.pem", "w") as pem_file:
+        encoded_pvtkey = pvtkey.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.PKCS8,
+            encryption_algorithm=serialization.BestAvailableEncryption(encode_b64(os.environ["SECRET_KEY"]))
+        )
+
+        pem_file.write(f"{decode_b64(encoded_pvtkey)}")
+
+def load_private_key (name: str) -> _X25519PrivateKey:
+    with open(base_path / f"app/util/encrypted_keys/{name}.pem", "r") as pem_file:
+        return serialization.load_pem_private_key(
+            backend=default_backend(),
+            password=encode_b64(os.environ["SECRET_KEY"]),
+            data=encode_b64("\n".join(pem_file.readlines()))
+        )
