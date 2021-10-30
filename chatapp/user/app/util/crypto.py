@@ -86,7 +86,6 @@ def snd_msg (
     ratchets: dict[str, Ratchet], pbkey: bytes, msg: bytes
 ) -> tuple[bytes, _X25519PublicKey]:
     dh_ratchet_rotation_send(ratchets, pbkey)
-
     key, init_vector = ratchets["snd_ratchet"].next()
     cipher = AES.new(key, AES.MODE_CBC, init_vector).encrypt(pad(msg))
 
