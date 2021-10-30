@@ -24,7 +24,6 @@ mod_auth = Blueprint("auth", __name__, url_prefix="/auth")
 def signin () -> wrappers.Response:
     try:
         data = request.json
-
         user = User.query.filter_by(email=data["email"]).one()
 
         if user and check_password_hash(user.password, data["password"]):

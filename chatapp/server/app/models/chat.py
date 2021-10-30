@@ -9,9 +9,9 @@ class Chat (db.Model):
     # Chat Name
     name            : db.String = db.Column(db.String(128), nullable=False)
 
-    date_created    : db.DateTime = db.Column(db.DateTime, default=db.func.current_timestamp())
+    date_created    : db.DateTime = db.Column(db.DateTime, default=db.func.now())
     date_modified   : db.DateTime = db.Column(
-        db.DateTime,  default=db.func.current_timestamp(), onupdate=db.func.current_timestamp()
+        db.DateTime,  default=db.func.now(), onupdate=db.func.now()
     )
 
     # Extra Information

@@ -16,9 +16,9 @@ class User (db.Model):
     telephone       : db.String = db.Column(db.String(15), nullable=False, unique=True)
     password        : db.String = db.Column(db.String(192), nullable=False)
 
-    date_created    : db.DateTime = db.Column(db.DateTime, default=db.func.current_timestamp())
+    date_created    : db.DateTime = db.Column(db.DateTime, default=db.func.now())
     date_modified   : db.DateTime = db.Column(
-        db.DateTime,  default=db.func.current_timestamp(), onupdate=db.func.current_timestamp()
+        db.DateTime,  default=db.func.now(), onupdate=db.func.now()
     )
 
     # Extra Information
