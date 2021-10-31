@@ -110,6 +110,13 @@ def rcv_msg (
 
     return unpad(AES.new(key, AES.MODE_CBC, init_vector).decrypt(cipher))
 
+def generate_private_key (name: str = None) -> X25519PrivateKey:
+    pvt_key = X25519PrivateKey.generate()
+    if name is not None:
+        save_private_key(name, pvt_key)
+
+    return pvt_key
+
 def save_private_key (name: str, pvtkey: _X25519PrivateKey) -> None:
     with open(base_path / f"app/util/encrypted_keys/{name}.pem", "w") as pem_file:
         encoded_pvtkey = pvtkey.private_bytes(
