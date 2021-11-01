@@ -15,6 +15,7 @@ from Crypto.Cipher import AES
 from pathlib import Path
 
 base_path = Path(__file__).resolve().parent.parent.parent
+keys_path = base_path / "app/util/encrypted_keys/"
 
 dotenv.load_dotenv(base_path / ".env", override=False)
 
@@ -127,10 +128,23 @@ def save_private_key (name: str, pvtkey: _X25519PrivateKey) -> None:
 
         pem_file.write(f"{decode_b64(encoded_pvtkey)}")
 
+def public_key (pvtkey: _X25519PrivateKey) -> str:
+    return decode_b64(
+        pvtkey.public_key().public_bytes(
+            encoding=serialization.Encoding.Raw,
+            format=serialization.PublicFormat.Raw
+        )
+    )
+
 def load_private_key (name: str) -> _X25519PrivateKey:
-    with open(base_path / f"app/util/encrypted_keys/{name}.pem", "r") as pem_file:
+    with open(f"{keys_path}{name}.pem", "r") as pem_file:
         return serialization.load_pem_private_key(
             backend=default_backend(),
             password=encode_b64(os.environ["SECRET_KEY"]),
             data=encode_b64("\n".join(pem_file.readlines()))
         )
+
+def clean_keys () -> None:
+    for item in os.listdir(keys_path):
+        if item.endswith(".pem"):
+            os.remove(keys_path / item)
