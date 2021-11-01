@@ -6,18 +6,19 @@ from typing import Union
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
-from cryptography.hazmat.backends.openssl.x25519 import _X25519PrivateKey, _X25519PublicKey
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey
+from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey, X25519PublicKey
 from cryptography.hazmat.backends import default_backend
-
 from Crypto.Cipher import AES
-
 from pathlib import Path
 
 base_path = Path(__file__).resolve().parent.parent.parent
 keys_path = base_path / "app/util/encrypted_keys/"
 
 dotenv.load_dotenv(base_path / ".env", override=False)
+
+PrivateKeys = Union[Ed25519PrivateKey, X25519PrivateKey]
+PublicKeys = Union[Ed25519PublicKey, X25519PublicKey]
 
 class SymmetricRatchet(object):
     def __init__ (self, key: bytes):
@@ -53,7 +54,7 @@ def hkdf_derive_key (input: bytes, length: int) -> bytes:
     return hkdf_key.derive(input)
 
 def sender_x3dh (
-    sender_keys: dict[str, _X25519PrivateKey], recv_keys: dict[str, _X25519PublicKey]
+    sender_keys: dict[str, PrivateKeys], recv_keys: dict[str, PublicKeys]
 ) -> bytes:
     dh1 = sender_keys["IK"].exchange(recv_keys["SPK"])
     dh2 = sender_keys["EK"].exchange(recv_keys["IK"])
@@ -63,7 +64,7 @@ def sender_x3dh (
     return hkdf_derive_key(dh1 + dh2 + dh3 + dh4, 32)
 
 def receiver_x3dh (
-    sender_keys: dict[str, _X25519PublicKey], recv_keys: dict[str, _X25519PrivateKey]
+    sender_keys: dict[str, PublicKeys], recv_keys: dict[str, PrivateKeys]
 ) -> bytes:
     dh1 = recv_keys["SPK"].exchange(sender_keys["IK"])
     dh2 = recv_keys["IK"].exchange(sender_keys["EK"])
@@ -75,7 +76,7 @@ def receiver_x3dh (
 def init_root_ratchet (shared_key: bytes) -> SymmetricRatchet:
     return SymmetricRatchet(shared_key)
 
-Ratchet = Union[SymmetricRatchet, X25519PrivateKey]
+Ratchet = Union[SymmetricRatchet, PrivateKeys, Ed25519PrivateKey]
 
 def dh_ratchet_rotation_receive (
     ratchets: dict[str, Ratchet], pbkey: bytes
@@ -96,7 +97,7 @@ def dh_ratchet_rotation_send (
 
 def snd_msg (
     ratchets: dict[str, Ratchet], pbkey: bytes, msg: bytes
-) -> tuple[bytes, _X25519PublicKey]:
+) -> tuple[bytes, PublicKeys]:
     dh_ratchet_rotation_send(ratchets, pbkey)
     key, init_vector = ratchets["snd_ratchet"].next()
     cipher = AES.new(key, AES.MODE_CBC, init_vector).encrypt(pad(msg))
@@ -104,21 +105,23 @@ def snd_msg (
     return cipher, ratchets["dh_ratchet"].public_key()
 
 def rcv_msg (
-    ratchets: dict[str, Ratchet], pbkey: _X25519PublicKey, cipher: bytes
+    ratchets: dict[str, Ratchet], pbkey: PublicKeys, cipher: bytes
 ) -> bytes:
     dh_ratchet_rotation_receive(ratchets, pbkey)
     key, init_vector = ratchets["rcv_ratchet"].next()
 
     return unpad(AES.new(key, AES.MODE_CBC, init_vector).decrypt(cipher))
 
-def generate_private_key (name: str = None) -> X25519PrivateKey:
-    pvt_key = X25519PrivateKey.generate()
+def generate_private_key (name: str = None) -> PrivateKeys:
+
+    pvt_key = X25519PrivateKey.generate() if name != "sgn_key" else Ed25519PrivateKey.generate()
+
     if name is not None:
         save_private_key(name, pvt_key)
 
     return pvt_key
 
-def save_private_key (name: str, pvtkey: _X25519PrivateKey) -> None:
+def save_private_key (name: str, pvtkey: PrivateKeys) -> None:
     with open(base_path / f"app/util/encrypted_keys/{name}.pem", "w") as pem_file:
         encoded_pvtkey = pvtkey.private_bytes(
             encoding=serialization.Encoding.PEM,
@@ -128,7 +131,7 @@ def save_private_key (name: str, pvtkey: _X25519PrivateKey) -> None:
 
         pem_file.write(f"{decode_b64(encoded_pvtkey)}")
 
-def public_key (pvtkey: _X25519PrivateKey) -> str:
+def public_key (pvtkey: PrivateKeys) -> str:
     return decode_b64(
         pvtkey.public_key().public_bytes(
             encoding=serialization.Encoding.Raw,
@@ -136,7 +139,7 @@ def public_key (pvtkey: _X25519PrivateKey) -> str:
         )
     )
 
-def load_private_key (name: str) -> _X25519PrivateKey:
+def load_private_key (name: str) -> PrivateKeys:
     with open(f"{keys_path}{name}.pem", "r") as pem_file:
         return serialization.load_pem_private_key(
             backend=default_backend(),
