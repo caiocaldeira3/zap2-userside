@@ -1,4 +1,5 @@
 import os
+import sys
 import json
 import dotenv
 import requests
@@ -14,7 +15,7 @@ dotenv.load_dotenv(base_path / ".env", override=False)
 from app import db
 from app.models.user import User
 from app.util.json_encoder import ComplexEncoder
-from app.util.crypto import generate_private_key, load_private_key, clean_keys, public_key
+from app.util.crypto import generate_private_key, load_private_key, clean_keys, public_key, sign_message
 
 @dc.dataclass()
 class Api:
@@ -24,6 +25,10 @@ class Api:
         "Param-Auth": os.environ["CHAT_SECRET"]
     })
     headers_user: dict = dc.field(init=False, default=None)
+    device_url: str = dc.field(
+        init=False,
+        default=f"http://192.168.1.32:{sys.argv[1] if len(sys.argv) >= 2 else 3030}"
+    )
 
     user_id: int = dc.field(init=False, default=None)
     id_key: _X25519PrivateKey = dc.field(init=False, default=None)
@@ -33,8 +38,9 @@ class Api:
         self, name: str, email: str, telephone: str, password: str, description: str = None
     ) -> None:
         self.id_key = generate_private_key("id_key")
-        self.sgn_key = generate_private_key("sgn_key")
+        self.sgn_key = generate_private_key("sgn_key", sgn_key=True)
 
+        address = self.device_url
         id_key = public_key(self.id_key)
         sgn_key = public_key(self.sgn_key)
         otkeys = [
@@ -68,7 +74,7 @@ class Api:
 
                 self.user_id = user.id
                 self.headers_user = {
-                    "signed-message": id_key.sign(b"that's me wario")
+                    "signed-message": sign_message(self.sgn_key)
                 } | self.headers_client
 
         except Exception as exc:

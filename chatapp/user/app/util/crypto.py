@@ -112,10 +112,8 @@ def rcv_msg (
 
     return unpad(AES.new(key, AES.MODE_CBC, init_vector).decrypt(cipher))
 
-def generate_private_key (name: str = None) -> PrivateKeys:
-
-    pvt_key = X25519PrivateKey.generate() if name != "sgn_key" else Ed25519PrivateKey.generate()
-
+def generate_private_key (name: str = None, sgn_key: bool = False) -> PrivateKeys:
+    pvt_key = X25519PrivateKey.generate() if not sgn_key else Ed25519PrivateKey.generate()
     if name is not None:
         save_private_key(name, pvt_key)
 
@@ -138,6 +136,9 @@ def public_key (pvtkey: PrivateKeys) -> str:
             format=serialization.PublicFormat.Raw
         )
     )
+
+def sign_message (pvtkey: Ed25519PrivateKey) -> str:
+    return decode_b64(pvtkey.sign(b"This is me, Mario"))
 
 def load_private_key (name: str) -> PrivateKeys:
     with open(f"{keys_path}{name}.pem", "r") as pem_file:
