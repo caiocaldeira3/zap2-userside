@@ -6,7 +6,7 @@ from . import user_chat
 class User (db.Model):
 
     __tablename__   : str = "user"
-    user_id         : db.Integer = db.Column(db.Integer, primary_key=True)
+    id         : db.Integer = db.Column(db.Integer, primary_key=True)
 
     # User Name
     name            : db.String = db.Column(db.String(128), nullable=False)
@@ -14,7 +14,8 @@ class User (db.Model):
     # Identification Data: email & password
     email           : db.String = db.Column(db.String(128), nullable=False, unique=True)
     telephone       : db.String = db.Column(db.String(15), nullable=False, unique=True)
-    password        : db.String = db.Column(db.String(192), nullable=False)
+    id_key          : db.String = db.Column(db.String(128), nullable=False)
+    sgn_key         : db.String = db.Column(db.String(128), nullable=False)
 
     date_created    : db.DateTime = db.Column(db.DateTime, default=db.func.now())
     date_modified   : db.DateTime = db.Column(
@@ -25,9 +26,11 @@ class User (db.Model):
     description     : db.Text = db.Column(db.Text(500), nullable=True)
 
     # Foreign Keys
-    chats           : any = db.relationship(
-        "Chat", secondary=user_chat, backref=db.backref("users", lazy="dynamic")
-    )
+    otkeys         : any = db.relationship("OTKey", backref="owner")
+    devices         : any = db.relationship("Device", backref="user")
+    # chats           : any = db.relationship(
+    #     "Chat", secondary=user_chat, backref=db.backref("users", lazy="dynamic")
+    # )
 
     def __repr__ (self) -> str:
         return f"<User {self.name}>"

@@ -37,7 +37,7 @@ def list_chats () -> wrappers.Response:
 @mod_chat.route("/chat-info/<int:chat_id>/",  methods=["GET"])
 def chat_info (chat_id: int) -> wrappers.Response:
     try:
-        query = Chat.query.filter_by(chat_id=chat_id).one()
+        query = Chat.query.filter_by(id=chat_id).one()
 
         return Response(
             response=json.dumps(query, cls=AlchemyEncoder),
@@ -59,7 +59,7 @@ def chat_info (chat_id: int) -> wrappers.Response:
 @mod_chat.route("/chat-info/<int:chat_id>/user-list/", methods=["GET"])
 def user_list (chat_id: int) -> wrappers.Response:
     try:
-        chat = Chat.query.filter_by(chat_id=chat_id).one()
+        chat = Chat.query.filter_by(id=chat_id).one()
         query = chat.users.all()
 
         return Response(
@@ -78,14 +78,14 @@ def user_list (chat_id: int) -> wrappers.Response:
 @mod_chat.route("/<int:chat_id>/add-user/<int:user_id>/", methods=["PUT"])
 def add_user (chat_id: int, user_id: int) -> wrappers.Response:
     try:
-        chat = Chat.query.filter_by(chat_id=chat_id).one()
-        user = User.query.filter_by(user_id=user_id).one()
+        chat = Chat.query.filter_by(id=chat_id).one()
+        user = User.query.filter_by(id=user_id).one()
 
         chat.users.append(user)
         db.session.add(chat)
         db.session.commit()
 
-        chat = Chat.query.filter_by(chat_id=chat_id).one()
+        chat = Chat.query.filter_by(id=chat_id).one()
         query = chat.users.all()
 
         return Response(

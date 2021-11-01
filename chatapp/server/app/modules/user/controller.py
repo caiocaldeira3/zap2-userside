@@ -23,7 +23,7 @@ mod_user = Blueprint("user", __name__, url_prefix="/user")
 @mod_user.route("/user-info/<int:user_id>/",  methods=["GET"])
 def user_info_id (user_id: int) -> wrappers.Response:
     try:
-        query = User.query.filter_by(user_id=user_id).one()
+        query = User.query.filter_by(id=user_id).one()
 
         return Response(
             response=json.dumps(query, cls=AlchemyEncoder),
@@ -77,11 +77,11 @@ def update_user (user_id: int) -> wrappers.Response:
         data = request.json
         data.pop("password", None)
 
-        stmt = db.update(User).where(User.user_id == user_id).values(**data)
+        stmt = db.update(User).where(User.id == user_id).values(**data)
 
         with db.engine.connect() as connection:
             result = connection.execute(stmt)
-            query = User.query.filter_by(user_id=user_id).one()
+            query = User.query.filter_by(id=user_id).one()
 
             return Response(
                 response=json.dumps(query, cls=AlchemyEncoder),
@@ -103,7 +103,7 @@ def update_user (user_id: int) -> wrappers.Response:
 @mod_user.route("/user-info/<int:user_id>/chat-list/", methods=["GET"])
 def chat_list (user_id: int) -> wrappers.Response:
     try:
-        query = User.query.filter_by(user_id=user_id).one().chats
+        query = User.query.filter_by(id=user_id).one().chats
 
         return Response(
             response=json.dumps(query, cls=AlchemyEncoder),
@@ -121,11 +121,49 @@ def chat_list (user_id: int) -> wrappers.Response:
 
         return ServerError
 
-@mod_user.route("/<int:user_id>/create-chat/", methods=["POST"])
-def create_chat (user_id: int) -> wrappers.Response:
+@mod_user.route("/create-chat/", methods=["POST"])
+def create_chat () -> wrappers.Response:
     try:
         data = request.json
-        user = User.query.filter_by(user_id=user_id).one()
+        owner = User.query.filter_by(telephone=data["owner"]).one()
+        users = User.query.filter_by(telephone=data["users"])
+
+        chat = Chat(
+            name=data["name"],
+            users=[ owner ] + users,
+            description=data.get("description", None)
+        )
+        db.session.add(chat)
+        db.session.commit()
+
+        return Response(
+            response=json.dumps(chat, cls=AlchemyEncoder),
+            status=200,
+            mimetype="application/json"
+        )
+
+    except IntegrityError as exc:
+        print(exc)
+
+        return DuplicateError
+
+    except NoResultFound as exc:
+        print(exc)
+
+        print("There was no chat with such ID")
+        return NotFoundError
+
+    except Exception as exc:
+        print(exc)
+
+        return ServerError
+
+@mod_user.route("/<int:user_id>/send-message/", methods=["POST"])
+def send_message (user_id: int) -> wrappers.Response:
+    try:
+        data = request.json
+        user = User.query.filter_by(id=user_id).one()
+        chat = Chat.query.filter_by(id=data["chat_id"]).one()
 
         chat = Chat(
             name=data["name"],
@@ -137,7 +175,10 @@ def create_chat (user_id: int) -> wrappers.Response:
         db.session.commit()
 
         return Response(
-            response=json.dumps(chat, cls=AlchemyEncoder),
+            response=json.dumps({
+                "status": "ok",
+                "msg": "The message has been sent to all devices"
+            }),
             status=200,
             mimetype="application/json"
         )
