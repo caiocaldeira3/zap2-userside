@@ -24,7 +24,6 @@ def signup () -> wrappers.Response:
         data = json.loads(request.json)
 
         user = User(
-            email=data["email"],
             name=data["name"],
             id_key=data["id_key"],
             sgn_key=data["sgn_key"],
@@ -35,6 +34,7 @@ def signup () -> wrappers.Response:
                 for otkey in data["otkeys"]
             ],
             telephone=data.get("telephone"),
+            email=data.get("email", None),
             description=data.get("description", None)
         )
 
@@ -46,19 +46,18 @@ def signup () -> wrappers.Response:
         return Response(
             response=json.dumps({
                 "status": "ok",
-                "msg": {
+                "data": {
                     "user": {
                         "id": user.id,
-                        "email": user.email
+                        "telephone": user.telephone
                     }
-                }
+                },
+                "msg": "User created"
             }, cls=ComplexEncoder),
             status=200,
             mimetype="application/json"
         )
 
     except IntegrityError as exc:
-        print(exc)
-
         return DuplicateError
 

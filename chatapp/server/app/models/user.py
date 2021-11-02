@@ -10,7 +10,6 @@ class User (db.Model):
     name            : db.String = db.Column(db.String(128), nullable=False)
 
     # Identification Data: email & password
-    email           : db.String = db.Column(db.String(128), nullable=False, unique=True)
     telephone       : db.String = db.Column(db.String(15), nullable=False, unique=True)
     id_key          : db.String = db.Column(db.String(128), nullable=False)
     sgn_key         : db.String = db.Column(db.String(128), nullable=False)
@@ -22,6 +21,7 @@ class User (db.Model):
     )
 
     # Extra Information
+    email           : db.String = db.Column(db.String(128), nullable=True, unique=True)
     description     : db.Text = db.Column(db.Text(500), nullable=True)
 
     # Foreign Keys
