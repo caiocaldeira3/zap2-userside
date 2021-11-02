@@ -8,3 +8,4 @@ cryptography==2.8
 pycrypto
 dataclasses
 flask_cors
+regex
