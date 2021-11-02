@@ -13,7 +13,8 @@ from Crypto.Cipher import AES
 from pathlib import Path
 
 base_path = Path(__file__).resolve().parent.parent.parent
-keys_path = base_path / "app/util/encrypted_keys/"
+ratchets_path = base_path / "app/util/ratchets"
+keys_path = base_path / "app/util/encrypted_keys"
 
 dotenv.load_dotenv(base_path / ".env", override=False)
 
@@ -30,6 +31,11 @@ class SymmetricRatchet(object):
 
         # key, initializing vector
         return output[ 32 : 64 ], output[ 64: ]
+
+def ensure_dir (file_path: str) -> None:
+    directory = os.path.dirname(file_path)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
 
 def decode_b64 (msg: bytes) -> str:
     return base64.encodebytes(msg).decode("utf-8").strip()
@@ -76,7 +82,7 @@ def receiver_x3dh (
 def init_root_ratchet (shared_key: bytes) -> SymmetricRatchet:
     return SymmetricRatchet(shared_key)
 
-Ratchet = Union[SymmetricRatchet, PrivateKeys, Ed25519PrivateKey]
+Ratchet = Union[ SymmetricRatchet, PrivateKeys ]
 
 def dh_ratchet_rotation_receive (
     ratchets: dict[str, Ratchet], pbkey: bytes
@@ -130,14 +136,34 @@ def generate_private_key (name: str = None, sgn_key: bool = False) -> PrivateKey
     return pvt_key
 
 def save_private_key (name: str, pvtkey: PrivateKeys) -> None:
-    with open(base_path / f"app/util/encrypted_keys/{name}.pem", "w") as pem_file:
+    with open(keys_path / f"{name}.pem", "w") as pem_file:
         encoded_pvtkey = pvtkey.private_bytes(
             encoding=serialization.Encoding.PEM,
             format=serialization.PrivateFormat.PKCS8,
-            encryption_algorithm=serialization.BestAvailableEncryption(encode_b64(os.environ["SECRET_KEY"]))
+            encryption_algorithm=serialization.BestAvailableEncryption(
+                encode_b64(os.environ["SECRET_KEY"])
+            )
         )
 
         pem_file.write(f"{decode_b64(encoded_pvtkey)}")
+
+def save_ratchet (chat_id: int, ratchet_name: str, ratchet: Ratchet) -> None:
+    ensure_dir(ratchets_path / f"{chat_id}/{ratchet_name}" )
+    if isinstance(ratchet, X25519PrivateKey):
+        with open(ratchets_path / f"{chat_id}/{ratchet_name}.pem", "w") as pem_file:
+            encoded_ratchet = ratchet.private_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PrivateFormat.PKCS8,
+                encryption_algorithm=serialization.BestAvailableEncryption(
+                    encode_b64(os.environ["SECRET_KEY"])
+                )
+            )
+
+            pem_file.write(f"{decode_b64(encoded_ratchet)}")
+
+    elif isinstance(ratchet, SymmetricRatchet):
+        with open(ratchets_path / f"{chat_id}/{ratchet_name}", "w") as sym_file:
+            sym_file.write(f"{decode_b64(ratchet.state)}")
 
 def public_key (pvtkey: PrivateKeys) -> str:
     return decode_b64(
@@ -153,7 +179,7 @@ def sign_message (pvtkey: Ed25519PrivateKey) -> str:
     ).replace("\r", "").replace("\n", "")
 
 def load_private_key (name: str) -> PrivateKeys:
-    with open(f"{keys_path}{name}.pem", "r") as pem_file:
+    with open(keys_path / f"{name}.pem", "r") as pem_file:
         return serialization.load_pem_private_key(
             backend=default_backend(),
             password=encode_b64(os.environ["SECRET_KEY"]),
