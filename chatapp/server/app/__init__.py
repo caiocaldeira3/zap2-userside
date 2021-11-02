@@ -34,13 +34,11 @@ from app.models.device import Device
 from app.models.public_keys import OTKey
 
 from app.modules.auth.controller import mod_auth as auth_module
-from app.modules.chat.controller import mod_chat as chat_module
 from app.modules.user.controller import mod_user as user_module
 
 # Register blueprint(s)
 app.register_blueprint(auth_module)
 app.register_blueprint(user_module)
-app.register_blueprint(chat_module)
 # ..
 
 # Build the database:
