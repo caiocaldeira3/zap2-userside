@@ -4,7 +4,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 
 # Import Util Modules
-from app.util.json_encoder import AlchemyEncoder
+from app.util.json_encoder import ComplexEncoder
 from app.util.responses import AuthorizationError, DuplicateError, NotFoundError, ServerError
 
 # Import module models (i.e. User)
@@ -28,6 +28,7 @@ def signup () -> wrappers.Response:
             name=data["name"],
             id_key=data["id_key"],
             sgn_key=data["sgn_key"],
+            ed_key=data["ed_key"],
             devices=[ Device(address=data["address"]) ],
             otkeys=[
                 OTKey(key_id=otkey["id"], otkey=otkey["key"])
@@ -45,11 +46,13 @@ def signup () -> wrappers.Response:
         return Response(
             response=json.dumps({
                 "status": "ok",
-                "user": {
-                    "id": user.id,
-                    "email": user.email
+                "msg": {
+                    "user": {
+                        "id": user.id,
+                        "email": user.email
+                    }
                 }
-            }, cls=AlchemyEncoder),
+            }, cls=ComplexEncoder),
             status=200,
             mimetype="application/json"
         )
