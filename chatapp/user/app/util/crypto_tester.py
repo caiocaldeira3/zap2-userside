@@ -1,17 +1,15 @@
-from base64 import encode
-from cryptography.hazmat.backends.openssl.x25519 import _X25519PrivateKey, _X25519PublicKey
-
+from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
 from crypto import *
 
 class keyzeds (object):
-    def private_keys (self) -> dict[str, _X25519PrivateKey]:
+    def private_keys (self) -> dict[str, PrivateKeys]:
         return self.__dict__
 
-    def public_keys (self) -> dict[str, _X25519PublicKey]:
+    def public_keys (self) -> dict[str, PublicKeys]:
         return {
             attr: self.__getattribute__(attr).public_key()
             for attr in self.__dict__.keys()
-            if isinstance(self.__getattribute__(attr), _X25519PrivateKey)
+            if isinstance(self.__getattribute__(attr), X25519PrivateKey)
         }
 
 class Bob(keyzeds):
