@@ -1,4 +1,5 @@
 import os
+import shutil
 import dotenv
 import base64
 
@@ -104,6 +105,11 @@ def dh_ratchet_rotation_send (
 def create_chat_encryption (
     pvt_keys: dict[str, PrivateKeys], pb_keys: dict[str, PublicKeys], sender: bool
 ) -> SymmetricRatchet:
+    pb_keys = {
+        key: X25519PublicKey.from_public_bytes(encode_b64(value))
+        for key, value in pb_keys.items()
+    }
+
     if sender:
         shared_key = sender_x3dh(sender_keys=pvt_keys, recv_keys=pb_keys)
     else:
@@ -190,3 +196,4 @@ def clean_keys () -> None:
     for item in os.listdir(keys_path):
         if item.endswith(".pem"):
             os.remove(keys_path / item)
+    shutil.rmtree(ratchets_path)
