@@ -9,6 +9,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 
 # Import Util Modules
+
 # from app.util.responses import NotFoundError
 
 # Define the WSGI application object
@@ -33,6 +34,7 @@ migrate = Migrate(app, db)
 from app.modules.auth.controller import mod_auth as auth_module
 from app.modules.user.controller import mod_user as user_module
 from app.util.api import Api
+api = Api()
 
 # Register blueprint(s)
 app.register_blueprint(auth_module)
