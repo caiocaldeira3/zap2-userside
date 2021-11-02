@@ -95,6 +95,16 @@ def dh_ratchet_rotation_send (
 
     ratchets["snd_ratchet"] = SymmetricRatchet(shared_send)
 
+def create_chat_encryption (
+    pvt_keys: dict[str, PrivateKeys], pb_keys: dict[str, PublicKeys], sender: bool
+) -> SymmetricRatchet:
+    if sender:
+        shared_key = sender_x3dh(sender_keys=pvt_keys, recv_keys=pb_keys)
+    else:
+        shared_key = receiver_x3dh(sender_keys=pb_keys, recv_keys=pvt_keys)
+
+    return init_root_ratchet(shared_key)
+
 def snd_msg (
     ratchets: dict[str, Ratchet], pbkey: bytes, msg: bytes
 ) -> tuple[bytes, PublicKeys]:
@@ -138,7 +148,9 @@ def public_key (pvtkey: PrivateKeys) -> str:
     )
 
 def sign_message (pvtkey: Ed25519PrivateKey) -> str:
-    return decode_b64(pvtkey.sign(b"This is me, Mario"))
+    return decode_b64(
+        pvtkey.sign(b"This is me, Mario")
+    ).replace("\r", "").replace("\n", "")
 
 def load_private_key (name: str) -> PrivateKeys:
     with open(f"{keys_path}{name}.pem", "r") as pem_file:
