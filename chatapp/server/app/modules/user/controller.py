@@ -4,13 +4,14 @@ from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 from sqlalchemy.exc import IntegrityError
 
 # Import Util Modules
-from app.util.json_encoder import AlchemyEncoder
+from app.util.json_encoder import AlchemyEncoder, ComplexEncoder
+from app.util.api import create_chat
 from app.util.responses import (
     DuplicateError, NotFoundError, ServerError
 )
 
 # Import module models (i.e. Organization)
-from app.models.chat import Chat
+from app.models.public_keys import OTKey
 from app.models.user import User
 
 # Import application Database
@@ -124,61 +125,38 @@ def chat_list (user_id: int) -> wrappers.Response:
 @mod_user.route("/create-chat/", methods=["POST"])
 def create_chat () -> wrappers.Response:
     try:
-        data = request.json
+        data = json.loads(request.json)
         owner = User.query.filter_by(telephone=data["owner"]).one()
-        users = User.query.filter_by(telephone=data["users"])
+        users = User.query.filter(User.telephone.in_(data["users"])).all()
 
-        chat = Chat(
-            name=data["name"],
-            users=[ owner ] + users,
-            description=data.get("description", None)
-        )
-        db.session.add(chat)
-        db.session.commit()
+        if len(users) == 0:
+            raise Exception
 
-        return Response(
-            response=json.dumps(chat, cls=AlchemyEncoder),
-            status=200,
-            mimetype="application/json"
-        )
+        data.pop("owner", None)
+        data.pop("users", None)
 
-    except IntegrityError as exc:
-        print(exc)
+        keys = []
+        for user in users:
+            otkeys = user.otkeys[ : 2 ]
+            create_chat(owner, user, otkeys, data)
 
-        return DuplicateError
-
-    except NoResultFound as exc:
-        print(exc)
-
-        print("There was no chat with such ID")
-        return NotFoundError
-
-    except Exception as exc:
-        print(exc)
-
-        return ServerError
-
-@mod_user.route("/<int:user_id>/send-message/", methods=["POST"])
-def send_message (user_id: int) -> wrappers.Response:
-    try:
-        data = request.json
-        user = User.query.filter_by(id=user_id).one()
-        chat = Chat.query.filter_by(id=data["chat_id"]).one()
-
-        chat = Chat(
-            name=data["name"],
-            users=[user],
-            description=data.get("description", None)
-        )
-
-        db.session.add(chat)
-        db.session.commit()
+            data.append({
+                "name": user.name,
+                "telephone": user.telephone,
+                "keys": {
+                    "dh_ratchet": otkeys[0].otkey,
+                    "OTK": otkeys[1].otkey,
+                    "IK": user.id_key,
+                    "SPK": user.sgn_key
+                }
+            })
 
         return Response(
             response=json.dumps({
                 "status": "ok",
-                "msg": "The message has been sent to all devices"
-            }),
+                "data": data,
+                "msg": "Create chat message delivered."
+            }, cls=ComplexEncoder),
             status=200,
             mimetype="application/json"
         )
@@ -195,6 +173,46 @@ def send_message (user_id: int) -> wrappers.Response:
         return NotFoundError
 
     except Exception as exc:
-        print(exc)
-
+        raise exc
         return ServerError
+
+# @mod_user.route("/<int:user_id>/send-message/", methods=["POST"])
+# def send_message (user_id: int) -> wrappers.Response:
+#     try:
+#         data = request.json
+#         user = User.query.filter_by(id=user_id).one()
+#         chat = Chat.query.filter_by(id=data["chat_id"]).one()
+
+#         chat = Chat(
+#             name=data["name"],
+#             users=[user],
+#             description=data.get("description", None)
+#         )
+
+#         db.session.add(chat)
+#         db.session.commit()
+
+#         return Response(
+#             response=json.dumps({
+#                 "status": "ok",
+#                 "msg": "The message has been sent to all devices"
+#             }),
+#             status=200,
+#             mimetype="application/json"
+#         )
+
+#     except IntegrityError as exc:
+#         print(exc)
+
+#         return DuplicateError
+
+#     except NoResultFound as exc:
+#         print(exc)
+
+#         print("There was no chat with such ID")
+#         return NotFoundError
+
+#     except Exception as exc:
+#         print(exc)
+
+#         return ServerError
