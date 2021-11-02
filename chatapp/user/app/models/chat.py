@@ -20,9 +20,9 @@ class Chat (db.Model):
     description     : db.Text = db.Column(db.Text(500), nullable=True)
 
     # Foreign Keys
-    # messages        : any = db.relationship("Message", backref="sender")
-    chats           : any = db.relationship(
-        "Chat", secondary=user_chat, backref=db.backref("users", lazy="dynamic")
+    # messages       : any = db.relationship("Message", backref="sender")
+    users           : any = db.relationship(
+        "User", secondary=user_chat, backref=db.backref("chats", lazy="dynamic")
     )
 
     def __repr__ (self) -> str:
