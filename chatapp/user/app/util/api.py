@@ -3,6 +3,8 @@ import sys
 import json
 import dotenv
 import requests
+import fileinput
+import regex as re
 import dataclasses as dc
 
 from pathlib import Path
@@ -24,9 +26,7 @@ from app.util.crypto import create_chat_encryption, generate_private_key, load_p
 class Api:
 
     base_url: str = dc.field(init=False, default="http://192.168.1.34:8080")
-    headers_client: dict = dc.field(init=False, default_factory=lambda: {
-        "Param-Auth": os.environ["CHAT_SECRET"]
-    })
+    headers_client: dict = dc.field(init=False, default=None)
     headers_user: dict = dc.field(init=False, default=None)
     device_url: str = dc.field(
         init=False,
@@ -38,13 +38,36 @@ class Api:
     sgn_key: X25519PrivateKey = dc.field(init=False, default=None)
     ed_key: Ed25519PrivateKey = dc.field(init=False, default=None)
 
+    def __init__ (self, logged_in: str) -> None:
+        if logged_in == "logged_in" and os.environ["USER_ID"] != -1:
+            self.user_id = os.environ["USER_ID"]
+            self.id_key = load_private_key("id_key")
+            self.sgn_key = load_private_key("sgn_key")
+            self.ed_key = load_private_key("ed_key")
+
+        elif logged_in == "logged_in":
+            print("Api has not any session stored")
+            raise Exception
+
+        self.headers_client = {
+            "Param-Auth": os.environ["CHAT_SECRET"]
+        }
+
+    def _update_enviroment (self, key: str, value: str) -> None:
+        environ_regex = re.compile(f"(?<={key}=).*")
+
+        with fileinput.FileInput(".env", inplace=True, backup=".bak") as env:
+            for line in env:
+                print(environ_regex.sub(f"{value}", line), end="")
+
     def update_header_user (self) -> None:
         self.headers_user = {
             "signed-message": sign_message(self.ed_key)
         } | self.headers_client
 
     def signup (
-        self, name: str, email: str, telephone: str, password: str, description: str = None
+        self, name: str, telephone: str, password: str,
+        description: str = None, email: str = None
     ) -> None:
         self.id_key = generate_private_key("id_key")
         self.sgn_key = generate_private_key("sgn_key")
@@ -73,11 +96,10 @@ class Api:
 
             if resp_json["status"] == "ok":
                 user = User(
-                    email=email,
                     name=name,
                     telephone=telephone,
-                    server_id=resp_json["data"]["user"]["id"],
                     password=generate_password_hash(password),
+                    email=email,
                     description=description
                 )
                 db.session.add(user)
@@ -85,6 +107,7 @@ class Api:
 
                 self.user_id = user.id
                 self.update_header_user()
+                self._update_enviroment("USER_ID", self.user_id)
 
                 return resp_json["data"]
 

@@ -18,7 +18,9 @@ class Chat (db.Model):
 
     # Extra Information
     description     : db.Text = db.Column(db.Text(500), nullable=True)
-    messages        : any = db.relationship("Message", backref="sender")
+
+    # Foreign Keys
+    # messages        : any = db.relationship("Message", backref="sender")
     chats           : any = db.relationship(
         "Chat", secondary=user_chat, backref=db.backref("users", lazy="dynamic")
     )
