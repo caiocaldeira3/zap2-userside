@@ -10,7 +10,7 @@ from app.util.responses import AuthorizationError, DuplicateError, NotFoundError
 # Import module models (i.e. User)
 from app.models.user import User
 from app.models.device import Device
-from app.models.public_keys import OTKey
+from app.models.public_keys import OPKey
 
 # Import application Database
 from app import db
@@ -29,9 +29,9 @@ def signup () -> wrappers.Response:
             sgn_key=data["sgn_key"],
             ed_key=data["ed_key"],
             devices=[ Device(address=data["address"]) ],
-            otkeys=[
-                OTKey(key_id=otkey["id"], otkey=otkey["key"])
-                for otkey in data["otkeys"]
+            opkeys=[
+                OPKey(key_id=opkey["id"], opkey=opkey["key"])
+                for opkey in data["opkeys"]
             ],
             telephone=data.get("telephone"),
             email=data.get("email", None),
@@ -40,7 +40,7 @@ def signup () -> wrappers.Response:
 
         db.session.add(user)
         db.session.add_all(user.devices)
-        db.session.add_all(user.otkeys)
+        db.session.add_all(user.opkeys)
         db.session.commit()
 
         return Response(

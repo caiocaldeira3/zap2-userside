@@ -31,7 +31,7 @@ migrate = Migrate(app, db)
 # Import a module / component using its blueprint handler variable (mod_auth)
 
 from app.models.device import Device
-from app.models.public_keys import OTKey
+from app.models.public_keys import OPKey
 
 from app.modules.auth.controller import mod_auth as auth_module
 from app.modules.user.controller import mod_user as user_module

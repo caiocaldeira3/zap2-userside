@@ -25,7 +25,7 @@ class User (db.Model):
     description     : db.Text = db.Column(db.Text(500), nullable=True)
 
     # Foreign Keys
-    otkeys         : any = db.relationship("OTKey", backref="owner")
+    opkeys         : any = db.relationship("OPKey", backref="owner")
     devices         : any = db.relationship("Device", backref="user")
 
     def __repr__ (self) -> str:

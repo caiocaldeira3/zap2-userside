@@ -20,7 +20,7 @@ from app.models.chat import Chat
 
 from app import db
 from app.util.json_encoder import ComplexEncoder
-from app.util.crypto import create_chat_encryption, generate_private_key, load_private_key, clean_keys, public_key, save_ratchet, sign_message
+from app.util.crypto import create_chat_encryption, decode_b64, generate_private_key, load_private_key, clean_keys, public_key, save_ratchet, sign_message
 
 @dc.dataclass()
 class Api:
@@ -77,8 +77,8 @@ class Api:
         id_key = public_key(self.id_key)
         sgn_key = public_key(self.sgn_key)
         ed_key = public_key(self.ed_key)
-        otkeys = [
-            { "id": idx, "key": public_key(generate_private_key(f"{idx}_otk")) }
+        opkeys = [
+            { "id": idx, "key": public_key(generate_private_key(f"{idx}_opk")) }
             for idx in range(1, 11)
         ]
 
@@ -154,15 +154,14 @@ class Api:
 
                 user_ratchet = data["keys"].pop("dh_ratchet")
                 user_keys = data["keys"]
-
-                save_ratchet(
-                    chat.id, "root_ratchet", create_chat_encryption(
-                        { "IK": self.id_key, "EK": eph_key }, pb_keys=user_keys, sender=True
-                    )
+                root_ratchet = create_chat_encryption(
+                    { "IK": self.id_key, "EK": eph_key }, pb_keys=user_keys, sender=True
                 )
+
+                save_ratchet(chat.id, "root_ratchet", root_ratchet)
                 save_ratchet(chat.id, "user_ratchet", user_ratchet)
 
                 return chat.id
 
         except Exception as exc:
-            raise Exception
+            raise exc

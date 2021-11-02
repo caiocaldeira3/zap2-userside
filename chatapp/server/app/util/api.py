@@ -12,13 +12,13 @@ from app.util.json_encoder import ComplexEncoder
 
 from app import db
 from app.models.user import User
-from app.models.public_keys import OTKey
+from app.models.public_keys import OPKey
 
 headers_server = {
     "Param-Auth": os.environ["SECRET_KEY"]
 }
 
-def create_chat (owner: User, user: User, otkeys: list[OTKey], data: dict) -> None:
+def create_chat (owner: User, user: User, opkeys: list[OPKey], data: dict) -> None:
     for device in user.devices:
         response = requests.post(
             url=f"{device.address}/user/create-chat/",
@@ -29,19 +29,19 @@ def create_chat (owner: User, user: User, otkeys: list[OTKey], data: dict) -> No
                     "telephone": owner.telephone,
                     "description": owner.description
                 },
-                "used_keys": [ otkeys[0].key_id, otkeys[1].key_id ],
-                "users": user,
+                "used_keys": [ opkeys[0].key_id, opkeys[1].key_id ],
+                "user": user.telephone,
                 "name": data.pop("name"),
                 "keys": {
                     "pb_keys": {
                         "IK": owner.id_key,
                         "EK": data.pop("EK")
                     }
-                }
+                },
                 **data
             }, cls=ComplexEncoder)
         )
 
         json_response = response.json()
         if json_response["status"] == "ok":
-            print(json_response["data"])
+            print(json_response["msg"])

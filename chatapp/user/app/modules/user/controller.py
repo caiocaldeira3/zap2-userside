@@ -4,7 +4,7 @@ from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 from sqlalchemy.exc import IntegrityError
 
 # Import Util Modules
-from app.util.crypto import create_chat_encryption, load_private_key, save_ratchet
+from app.util.crypto import create_chat_encryption, load_private_key, save_ratchet, public_key, decode_b64
 from app.util.json_encoder import AlchemyEncoder
 from app.util.responses import (
     DuplicateError, NotFoundError, ServerError
@@ -26,11 +26,10 @@ def create_chat () -> wrappers.Response:
     from app import api
 
     try:
-
         data = json.loads(request.json)
 
         owner = User.query.filter_by(telephone=data["owner"]["telephone"]).first()
-        user = User.query.filter_by(id=api.user_id).one()
+        user = User.query.filter_by(id=api.user_id, telephone=data["user"]).one()
         if owner is None:
             owner = User(**data["owner"])
 
@@ -42,15 +41,19 @@ def create_chat () -> wrappers.Response:
             users = [ owner, user ],
             description = data.get("description", None)
         )
+
         db.session.add(chat)
         db.session.commit()
+
+        opkey = data["used_keys"][1]
+        dh_ratchet_key = data["used_keys"][0]
 
         pvt_keys = {
             "IK": load_private_key("id_key"),
             "SPK": load_private_key("sgn_key"),
-            "OTK": load_private_key(data["used_keys"][1])
+            "OPK": load_private_key(f"{opkey}_opk")
         }
-        dh_ratchet = load_private_key(data["used_keys"][0])
+        dh_ratchet = load_private_key(f"{dh_ratchet_key}_opk")
         root_ratchet = create_chat_encryption(pvt_keys, data["keys"]["pb_keys"], sender=False)
 
         save_ratchet(chat.id, "dh_ratchet", dh_ratchet)
@@ -59,7 +62,7 @@ def create_chat () -> wrappers.Response:
         return Response(
             response=json.dumps({
                 "status": "ok",
-                "msg": "The receiving chat has been created"
+                "msg": f"{chat.name} has been created for {user.telephone}"
             }),
             status=200,
             mimetype="application/json"

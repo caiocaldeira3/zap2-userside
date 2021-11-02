@@ -4,14 +4,14 @@ from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 from sqlalchemy.exc import IntegrityError
 
 # Import Util Modules
+from app.util import api
 from app.util.json_encoder import AlchemyEncoder, ComplexEncoder
-from app.util.api import create_chat
 from app.util.responses import (
     DuplicateError, NotFoundError, ServerError
 )
 
 # Import module models (i.e. Organization)
-from app.models.public_keys import OTKey
+from app.models.public_keys import OPKey
 from app.models.user import User
 
 # Import application Database
@@ -135,17 +135,17 @@ def create_chat () -> wrappers.Response:
         data.pop("owner", None)
         data.pop("users", None)
 
-        keys = []
+        return_data = []
         for user in users:
-            otkeys = user.otkeys[ : 2 ]
-            create_chat(owner, user, otkeys, data)
+            opkeys = user.opkeys[ : 2 ]
+            api.create_chat(owner, user, opkeys, data)
 
-            data.append({
+            return_data.append({
                 "name": user.name,
                 "telephone": user.telephone,
                 "keys": {
-                    "dh_ratchet": otkeys[0].otkey,
-                    "OTK": otkeys[1].otkey,
+                    "dh_ratchet": opkeys[0].opkey,
+                    "OPK": opkeys[1].opkey,
                     "IK": user.id_key,
                     "SPK": user.sgn_key
                 }
@@ -154,7 +154,7 @@ def create_chat () -> wrappers.Response:
         return Response(
             response=json.dumps({
                 "status": "ok",
-                "data": data,
+                "data": return_data,
                 "msg": "Create chat message delivered."
             }, cls=ComplexEncoder),
             status=200,
