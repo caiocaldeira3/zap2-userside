@@ -1,5 +1,7 @@
 from app import db
 
+from . import user_chat
+
 # Define a Chat model
 class Chat (db.Model):
 
@@ -17,6 +19,9 @@ class Chat (db.Model):
     # Extra Information
     description     : db.Text = db.Column(db.Text(500), nullable=True)
     messages        : any = db.relationship("Message", backref="sender")
+    chats           : any = db.relationship(
+        "Chat", secondary=user_chat, backref=db.backref("users", lazy="dynamic")
+    )
 
     def __repr__ (self) -> str:
         return f"<Chat {self.user.name}>"
