@@ -5,6 +5,7 @@ from sqlalchemy.exc import IntegrityError
 
 # Import Util Modules
 from app.util.crypto import create_chat_encryption, load_private_key, save_ratchet, public_key, decode_b64
+from app.util.authentication import authenticate_source
 from app.util.json_encoder import AlchemyEncoder
 from app.util.responses import (
     DuplicateError, NotFoundError, ServerError
@@ -22,6 +23,7 @@ mod_user = Blueprint("user", __name__, url_prefix="/user")
 
 # Set the route and accepted methods
 @mod_user.route("/create-chat/", methods=["POST"])
+@authenticate_source()
 def create_chat () -> wrappers.Response:
     from app import api
 
@@ -55,6 +57,9 @@ def create_chat () -> wrappers.Response:
         }
         dh_ratchet = load_private_key(f"{dh_ratchet_key}_opk")
         root_ratchet = create_chat_encryption(pvt_keys, data["keys"]["pb_keys"], sender=False)
+
+        print(public_key(dh_ratchet))
+        print(decode_b64(root_ratchet.state))
 
         save_ratchet(chat.id, "dh_ratchet", dh_ratchet)
         save_ratchet(chat.id, "root_ratchet", root_ratchet)

@@ -20,7 +20,7 @@ from app.models.chat import Chat
 
 from app import db
 from app.util.json_encoder import ComplexEncoder
-from app.util.crypto import create_chat_encryption, decode_b64, generate_private_key, load_private_key, clean_keys, public_key, save_ratchet, sign_message
+from app.util.crypto import create_chat_encryption, generate_private_key, load_private_key, clean_keys, public_key, save_ratchet, sign_message
 
 @dc.dataclass()
 class Api:
@@ -62,8 +62,26 @@ class Api:
 
     def update_header_user (self) -> None:
         self.headers_user = {
-            "signed-message": sign_message(self.ed_key)
+            "Signed-Message": sign_message(self.ed_key)
         } | self.headers_client
+
+    def ping (self) -> bool:
+        try:
+            user = User.query.filter_by(id=self.user_id).one()
+            response = requests.put(
+                url=f"{self.base_url}/auth/ping/",
+                json=json.dumps({
+                    "telephone": user.telephone
+                }),
+                headers=self.headers_user
+            )
+
+            resp_json = response.json()
+            if resp_json["status"] == "ok":
+                return True
+
+        except:
+            return False
 
     def signup (
         self, name: str, telephone: str, password: str,
@@ -92,8 +110,8 @@ class Api:
                     if key not in [ "self", "password" ] and value is not None
                 }, cls=ComplexEncoder)
             )
-            resp_json = response.json()
 
+            resp_json = response.json()
             if resp_json["status"] == "ok":
                 user = User(
                     name=name,
@@ -127,7 +145,7 @@ class Api:
                 headers=self.headers_user,
                 json=json.dumps({
                     "name": name,
-                    "owner": owner.telephone,
+                    "telephone": owner.telephone,
                     "users": users,
                     "EK": public_key(eph_key)
                 })

@@ -1,3 +1,5 @@
+import os
+
 # Import flask dependencies
 from flask import Blueprint, json, Response, request, wrappers
 from sqlalchemy.exc import IntegrityError
@@ -5,7 +7,8 @@ from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 
 # Import Util Modules
 from app.util.json_encoder import ComplexEncoder
-from app.util.responses import AuthorizationError, DuplicateError, NotFoundError, ServerError
+from app.util.authentication import authenticate_source, authenticate_user
+from app.util.responses import DuplicateError, NotFoundError, ServerError
 
 # Import module models (i.e. User)
 from app.models.user import User
@@ -18,7 +21,21 @@ from app import db
 # Define the blueprint: "auth", set its url prefix: app.url/auth
 mod_auth = Blueprint("auth", __name__, url_prefix="/auth")
 
+@mod_auth.route("/ping/", methods=["PUT"])
+@authenticate_source()
+@authenticate_user()
+def ping () -> wrappers.Response:
+    return Response(
+        response=json.dumps({
+            "status": "ok",
+            "msg": "Session authenticated"
+        }, cls=ComplexEncoder),
+        status=200,
+        mimetype="application/json"
+    )
+
 @mod_auth.route("/signup/", methods=["POST"])
+@authenticate_source()
 def signup () -> wrappers.Response:
     try:
         data = json.loads(request.json)

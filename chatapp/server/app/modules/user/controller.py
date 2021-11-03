@@ -5,6 +5,7 @@ from sqlalchemy.exc import IntegrityError
 
 # Import Util Modules
 from app.util import api
+from app.util.authentication import authenticate_source, authenticate_user
 from app.util.json_encoder import AlchemyEncoder, ComplexEncoder
 from app.util.responses import (
     DuplicateError, NotFoundError, ServerError
@@ -123,16 +124,18 @@ def chat_list (user_id: int) -> wrappers.Response:
         return ServerError
 
 @mod_user.route("/create-chat/", methods=["POST"])
+@authenticate_source()
+@authenticate_user()
 def create_chat () -> wrappers.Response:
     try:
         data = json.loads(request.json)
-        owner = User.query.filter_by(telephone=data["owner"]).one()
+        owner = User.query.filter_by(telephone=data["telephone"]).one()
         users = User.query.filter(User.telephone.in_(data["users"])).all()
 
         if len(users) == 0:
             raise Exception
 
-        data.pop("owner", None)
+        data.pop("telephone", None)
         data.pop("users", None)
 
         return_data = []

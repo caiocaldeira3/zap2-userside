@@ -181,7 +181,7 @@ def public_key (pvtkey: PrivateKeys) -> str:
 
 def sign_message (pvtkey: Ed25519PrivateKey) -> str:
     return decode_b64(
-        pvtkey.sign(b"This is me, Mario")
+        pvtkey.sign(b"It's me, Mario")
     ).replace("\r", "").replace("\n", "")
 
 def load_private_key (name: str) -> PrivateKeys:
