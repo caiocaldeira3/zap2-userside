@@ -10,11 +10,14 @@ class Chat (db.Model):
 
     # Chat Name
     name            : db.String = db.Column(db.String(128), nullable=False)
-
     date_created    : db.DateTime = db.Column(db.DateTime, default=db.func.now())
     date_modified   : db.DateTime = db.Column(
         db.DateTime,  default=db.func.now(), onupdate=db.func.now()
     )
+
+    # Chat ID from other users
+    # TODO -> Make it a list or a hash to unify
+    chat_id         : db.Integer = db.Column(db.Integer, nullable=False)
 
     # Extra Information
     description     : db.Text = db.Column(db.Text(500), nullable=True)
@@ -26,4 +29,4 @@ class Chat (db.Model):
     )
 
     def __repr__ (self) -> str:
-        return f"<Chat {self.user.name}>"
+        return f"<Chat {self.name}>"

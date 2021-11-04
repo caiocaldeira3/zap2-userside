@@ -141,7 +141,9 @@ def create_chat () -> wrappers.Response:
         return_data = []
         for user in users:
             opkeys = user.opkeys[ : 2 ]
-            api.create_chat(owner, user, opkeys, data)
+            chat_data = api.create_chat(owner, user, opkeys, data)
+            if chat_data is None:
+                raise Exception
 
             return_data.append({
                 "name": user.name,
@@ -151,7 +153,8 @@ def create_chat () -> wrappers.Response:
                     "OPK": opkeys[1].opkey,
                     "IK": user.id_key,
                     "SPK": user.sgn_key
-                }
+                },
+                **chat_data,
             })
 
         return Response(
@@ -159,6 +162,50 @@ def create_chat () -> wrappers.Response:
                 "status": "ok",
                 "data": return_data,
                 "msg": "Create chat message delivered."
+            }, cls=ComplexEncoder),
+            status=200,
+            mimetype="application/json"
+        )
+
+    except Exception as exc:
+        raise exc
+        return ServerError
+
+    except IntegrityError as exc:
+        print(exc)
+        raise exc
+
+        return DuplicateError
+
+    except NoResultFound as exc:
+        print(exc)
+
+        print("There was no chat with such ID")
+        return NotFoundError
+
+@mod_user.route("/send-message/", methods=["POST"])
+@authenticate_source()
+@authenticate_user()
+def send_message () -> wrappers.Response:
+    try:
+        data = json.loads(request.json)
+        users = User.query.filter(User.telephone.in_(data["users"])).all()
+
+        if len(users) == 0:
+            raise Exception
+
+        data["owner"] = data.pop("telephone", None)
+        data.pop("users", None)
+
+        dh_ratchets = []
+        for user in users:
+            dh_ratchets.append(api.send_message(user, data))
+
+        return Response(
+            response=json.dumps({
+                "status": "ok",
+                "data": { "dh_ratchets": dh_ratchets},
+                "msg": "Chat message delivered."
             }, cls=ComplexEncoder),
             status=200,
             mimetype="application/json"
@@ -178,44 +225,3 @@ def create_chat () -> wrappers.Response:
     except Exception as exc:
         raise exc
         return ServerError
-
-# @mod_user.route("/<int:user_id>/send-message/", methods=["POST"])
-# def send_message (user_id: int) -> wrappers.Response:
-#     try:
-#         data = request.json
-#         user = User.query.filter_by(id=user_id).one()
-#         chat = Chat.query.filter_by(id=data["chat_id"]).one()
-
-#         chat = Chat(
-#             name=data["name"],
-#             users=[user],
-#             description=data.get("description", None)
-#         )
-
-#         db.session.add(chat)
-#         db.session.commit()
-
-#         return Response(
-#             response=json.dumps({
-#                 "status": "ok",
-#                 "msg": "The message has been sent to all devices"
-#             }),
-#             status=200,
-#             mimetype="application/json"
-#         )
-
-#     except IntegrityError as exc:
-#         print(exc)
-
-#         return DuplicateError
-
-#     except NoResultFound as exc:
-#         print(exc)
-
-#         print("There was no chat with such ID")
-#         return NotFoundError
-
-#     except Exception as exc:
-#         print(exc)
-
-#         return ServerError

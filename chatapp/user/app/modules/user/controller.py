@@ -1,12 +1,15 @@
+import os
+
 # Import flask dependencies
 from flask import Blueprint, json, Response, request, wrappers
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import func
 
 # Import Util Modules
-from app.util.crypto import create_chat_encryption, load_private_key, save_ratchet, public_key, decode_b64
+import app.util.crypto as crypto
 from app.util.authentication import authenticate_source
-from app.util.json_encoder import AlchemyEncoder
+from app.util.json_encoder import ComplexEncoder
 from app.util.responses import (
     DuplicateError, NotFoundError, ServerError
 )
@@ -25,13 +28,11 @@ mod_user = Blueprint("user", __name__, url_prefix="/user")
 @mod_user.route("/create-chat/", methods=["POST"])
 @authenticate_source()
 def create_chat () -> wrappers.Response:
-    from app import api
-
     try:
         data = json.loads(request.json)
 
         owner = User.query.filter_by(telephone=data["owner"]["telephone"]).first()
-        user = User.query.filter_by(id=api.user_id, telephone=data["user"]).one()
+        user = User.query.filter_by(id=os.environ["USER_ID"], telephone=data["user"]).one()
         if owner is None:
             owner = User(**data["owner"])
 
@@ -41,6 +42,7 @@ def create_chat () -> wrappers.Response:
         chat = Chat(
             name = data["name"],
             users = [ owner, user ],
+            chat_id = data["chat_id"],
             description = data.get("description", None)
         )
 
@@ -51,22 +53,22 @@ def create_chat () -> wrappers.Response:
         dh_ratchet_key = data["used_keys"][0]
 
         pvt_keys = {
-            "IK": load_private_key("id_key"),
-            "SPK": load_private_key("sgn_key"),
-            "OPK": load_private_key(f"{opkey}_opk")
+            "IK": crypto.load_private_key("id_key"),
+            "SPK": crypto.load_private_key("sgn_key"),
+            "OPK": crypto.load_private_key(f"{opkey}_opk")
         }
-        dh_ratchet = load_private_key(f"{dh_ratchet_key}_opk")
-        root_ratchet = create_chat_encryption(pvt_keys, data["keys"]["pb_keys"], sender=False)
+        dh_ratchet = crypto.load_private_key(f"{dh_ratchet_key}_opk")
+        user_ratchet = data["dh_ratchet"]
+        root_ratchet = crypto.create_chat_encryption(pvt_keys, data["keys"]["pb_keys"], sender=False)
 
-        print(public_key(dh_ratchet))
-        print(decode_b64(root_ratchet.state))
-
-        save_ratchet(chat.id, "dh_ratchet", dh_ratchet)
-        save_ratchet(chat.id, "root_ratchet", root_ratchet)
+        crypto.save_ratchet(chat.id, "dh_ratchet", dh_ratchet)
+        crypto.save_ratchet(chat.id, "user_ratchet", user_ratchet)
+        crypto.save_ratchet(chat.id, "root_ratchet", root_ratchet)
 
         return Response(
             response=json.dumps({
                 "status": "ok",
+                "data": { "chat_id": chat.id },
                 "msg": f"{chat.name} has been created for {user.telephone}"
             }),
             status=200,
@@ -86,4 +88,42 @@ def create_chat () -> wrappers.Response:
 
     except Exception as exc:
         raise exc
-        return ServerError
+
+
+@mod_user.route("/receive-message/", methods=["POST"])
+@authenticate_source()
+def receive_message () -> wrappers.Response:
+    try:
+        data = json.loads(request.json)
+
+        owner = User.query.filter_by(telephone=data["owner"]).one()
+        user = User.query.filter_by(id=os.environ["USER_ID"], telephone=data["user"]).one()
+
+        chat_id = data["chat_id"]
+        cipher = crypto.encode_b64(data["cipher"])
+        pbkey = crypto.load_public_key(data["dh_ratchet"])
+        ratchets, _ = crypto.load_ratchets(chat_id)
+
+        msg = crypto.rcv_msg(ratchets, pbkey, cipher)
+        print(msg.decode("utf-8") )
+
+        ratchets.pop("rcv_ratchet", None)
+
+        ratchets["user_ratchet"] = data["dh_ratchet"]
+        for ratchet_name, ratchet in ratchets.items():
+            crypto.save_ratchet(chat_id, ratchet_name, ratchet)
+
+        return Response(
+            response=json.dumps({
+                "status": "ok",
+                "data": {
+                    "dh_ratchet": crypto.public_key(ratchets["dh_ratchet"])
+                },
+                "msg": "Message delivered"
+            }, cls=ComplexEncoder),
+            status=200,
+            mimetype="application/json"
+        )
+
+    except Exception as exc:
+        raise exc

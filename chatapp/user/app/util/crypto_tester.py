@@ -2,10 +2,10 @@ from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
 from crypto import *
 
 class keyzeds (object):
-    def private_keys (self) -> dict[str, PrivateKeys]:
+    def private_keys (self) -> dict[str, PrivateKey]:
         return self.__dict__
 
-    def public_keys (self) -> dict[str, PublicKeys]:
+    def public_keys (self) -> dict[str, PublicKey]:
         return {
             attr: self.__getattribute__(attr).public_key()
             for attr in self.__dict__.keys()

@@ -45,3 +45,26 @@ def create_chat (owner: User, user: User, opkeys: list[OPKey], data: dict) -> No
         json_response = response.json()
         if json_response["status"] == "ok":
             print(json_response["msg"])
+
+            return json_response["data"]
+        else:
+            print(json_response)
+
+def send_message (user: User, data: dict) -> None:
+    for device in user.devices:
+        response = requests.post(
+            url=f"{device.address}/user/receive-message/",
+            headers=headers_server,
+            json=json.dumps({
+                "user": user.telephone,
+                **data
+            })
+        )
+
+        json_response = response.json()
+        if json_response["status"] == "ok":
+            print(json_response["msg"])
+
+            return True
+        else:
+            return False
