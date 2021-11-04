@@ -27,23 +27,24 @@ from app.util.json_encoder import ComplexEncoder
 @dc.dataclass()
 class Api:
 
-    base_url: str = dc.field(init=False, default="http://192.168.1.34:8080")
+    base_url: str = dc.field(init=False, default="http://192.168.1.39:8080")
     headers_client: dict = dc.field(init=False, default=None)
     headers_user: dict = dc.field(init=False, default=None)
-    device_url: str = dc.field(
-        init=False,
-        default=f"http://192.168.1.32:{sys.argv[1] if len(sys.argv) >= 2 else 3030}"
-    )
+    device_url: str = dc.field(init=False, default=None)
 
     user_id: int = dc.field(init=False, default=None)
     id_key: X25519PrivateKey = dc.field(init=False, default=None)
     sgn_key: X25519PrivateKey = dc.field(init=False, default=None)
     ed_key: Ed25519PrivateKey = dc.field(init=False, default=None)
 
-    def __init__ (self, logged_in: str = None) -> None:
+    def __init__ (self, logged_in: str = None, port: str = None) -> None:
         self.headers_client = {
             "Param-Auth": os.environ["CHAT_SECRET"]
         }
+        if port is not None:
+            self.device_url = f"http://192.168.1.39:{port}"
+        else:
+            self.device_url = "http://192.168.1.39:3030"
 
         if logged_in == "logged_in" and os.environ["USER_ID"] != -1:
             self.user_id = os.environ["USER_ID"]
