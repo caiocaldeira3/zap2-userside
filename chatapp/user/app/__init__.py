@@ -36,9 +36,10 @@ from app.modules.auth.controller import mod_auth as auth_module
 from app.modules.user.controller import mod_user as user_module
 from app.util.api import Api
 
-logged_in = sys.argv[1] if len(sys.argv) >= 2 else None
-port = sys.argv[2] if len(sys.argv) == 3 else None
-api = Api(logged_in=logged_in, port=port)
+api = Api(
+    logged_in=sys.argv[1] if len(sys.argv) >= 2 else None,
+    port=sys.argv[2] if len(sys.argv) == 3 else None
+)
 
 # Register blueprint(s)
 app.register_blueprint(auth_module)
