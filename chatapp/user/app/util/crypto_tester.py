@@ -70,7 +70,7 @@ while True:
     )
     print(f"encrypted message: {decode_b64(cipher)}")
 
-    msg = rcv_msg(ratchets_receiver, snd_pbkey, cipher)
+    msg = rcv_msg(ratchets_receiver, load_public_key(snd_pbkey), cipher)
     print(f"decrypted_message: {str(msg)}")
 
     if sender == "alice":
