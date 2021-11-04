@@ -41,7 +41,7 @@ def create_chat () -> wrappers.Response:
 
         chat = Chat(
             name = data["name"],
-            users = [ owner, user ],
+            users = [ owner ],
             chat_id = data["chat_id"],
             description = data.get("description", None)
         )
@@ -81,7 +81,7 @@ def create_chat () -> wrappers.Response:
         return DuplicateError
 
     except NoResultFound as exc:
-        print(exc)
+        raise exc
 
         print("There was no chat with such ID")
         return NotFoundError

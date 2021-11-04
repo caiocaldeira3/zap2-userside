@@ -13,7 +13,7 @@ class User (db.Model):
     # Identification Data: email & telephone & password & id on server
     email           : db.String = db.Column(db.String(128), nullable=True, unique=True)
     telephone       : db.String = db.Column(db.String(15), nullable=False, unique=True)
-    password        : db.String = db.Column(db.String(128), nullable=False)
+    password        : db.String = db.Column(db.String(128), nullable=True)
 
     # Attributes
     description     : db.String = db.Column(db.String(255), nullable=True)
