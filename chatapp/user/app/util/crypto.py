@@ -19,8 +19,9 @@ keys_path = base_path / "app/util/encrypted_keys"
 
 dotenv.load_dotenv(base_path / ".env", override=False)
 
-PrivateKeys = Union[Ed25519PrivateKey, X25519PrivateKey]
-PublicKeys = Union[Ed25519PublicKey, X25519PublicKey]
+ratchets_iter = [
+    ("dh_ratchet", "private"), ("root_ratchet", "symmetric"), ("user_ratchet", "public")
+]
 
 class SymmetricRatchet(object):
     def __init__ (self, key: bytes):
@@ -32,6 +33,11 @@ class SymmetricRatchet(object):
 
         # key, initializing vector
         return output[ 32 : 64 ], output[ 64: ]
+
+PrivateKey = Union[Ed25519PrivateKey, X25519PrivateKey]
+PublicKey = Union[Ed25519PublicKey, X25519PublicKey]
+Ratchet = Union[ SymmetricRatchet, PrivateKey ]
+Key = Union[PrivateKey, PublicKey, SymmetricRatchet]
 
 def ensure_dir (file_path: str) -> None:
     directory = os.path.dirname(file_path)
@@ -61,7 +67,7 @@ def hkdf_derive_key (input: bytes, length: int) -> bytes:
     return hkdf_key.derive(input)
 
 def sender_x3dh (
-    sender_keys: dict[str, PrivateKeys], recv_keys: dict[str, PublicKeys]
+    sender_keys: dict[str, PrivateKey], recv_keys: dict[str, PublicKey]
 ) -> bytes:
     dh1 = sender_keys["IK"].exchange(recv_keys["SPK"])
     dh2 = sender_keys["EK"].exchange(recv_keys["IK"])
@@ -71,7 +77,7 @@ def sender_x3dh (
     return hkdf_derive_key(dh1 + dh2 + dh3 + dh4, 32)
 
 def receiver_x3dh (
-    sender_keys: dict[str, PublicKeys], recv_keys: dict[str, PrivateKeys]
+    sender_keys: dict[str, PublicKey], recv_keys: dict[str, PrivateKey]
 ) -> bytes:
     dh1 = recv_keys["SPK"].exchange(sender_keys["IK"])
     dh2 = recv_keys["IK"].exchange(sender_keys["EK"])
@@ -83,8 +89,6 @@ def receiver_x3dh (
 def init_root_ratchet (shared_key: bytes) -> SymmetricRatchet:
     return SymmetricRatchet(shared_key)
 
-Ratchet = Union[ SymmetricRatchet, PrivateKeys ]
-
 def dh_ratchet_rotation_receive (
     ratchets: dict[str, Ratchet], pbkey: bytes
 ) -> None:
@@ -94,7 +98,7 @@ def dh_ratchet_rotation_receive (
     ratchets["rcv_ratchet"] = SymmetricRatchet(shared_recv)
 
 def dh_ratchet_rotation_send (
-    ratchets: dict[str, Ratchet], pbkey: bytes
+    ratchets: dict[str, Ratchet], pbkey: PublicKey
 ) -> None:
     ratchets["dh_ratchet"] = X25519PrivateKey.generate()
     dh_send = ratchets["dh_ratchet"].exchange(pbkey)
@@ -103,7 +107,7 @@ def dh_ratchet_rotation_send (
     ratchets["snd_ratchet"] = SymmetricRatchet(shared_send)
 
 def create_chat_encryption (
-    pvt_keys: dict[str, PrivateKeys], pb_keys: dict[str, PublicKeys], sender: bool
+    pvt_keys: dict[str, PrivateKey], pb_keys: dict[str, PublicKey], sender: bool
 ) -> SymmetricRatchet:
     pb_keys = {
         key: X25519PublicKey.from_public_bytes(encode_b64(value))
@@ -118,30 +122,30 @@ def create_chat_encryption (
     return init_root_ratchet(shared_key)
 
 def snd_msg (
-    ratchets: dict[str, Ratchet], pbkey: bytes, msg: bytes
-) -> tuple[bytes, PublicKeys]:
+    ratchets: dict[str, Ratchet], pbkey: PublicKey, msg: bytes
+) -> tuple[bytes, PublicKey]:
     dh_ratchet_rotation_send(ratchets, pbkey)
     key, init_vector = ratchets["snd_ratchet"].next()
     cipher = AES.new(key, AES.MODE_CBC, init_vector).encrypt(pad(msg))
 
-    return cipher, ratchets["dh_ratchet"].public_key()
+    return cipher, public_key(ratchets["dh_ratchet"])
 
 def rcv_msg (
-    ratchets: dict[str, Ratchet], pbkey: PublicKeys, cipher: bytes
+    ratchets: dict[str, Ratchet], pbkey: bytes, cipher: bytes
 ) -> bytes:
     dh_ratchet_rotation_receive(ratchets, pbkey)
     key, init_vector = ratchets["rcv_ratchet"].next()
 
     return unpad(AES.new(key, AES.MODE_CBC, init_vector).decrypt(cipher))
 
-def generate_private_key (name: str = None, sgn_key: bool = False) -> PrivateKeys:
+def generate_private_key (name: str = None, sgn_key: bool = False) -> PrivateKey:
     pvt_key = X25519PrivateKey.generate() if not sgn_key else Ed25519PrivateKey.generate()
     if name is not None:
         save_private_key(name, pvt_key)
 
     return pvt_key
 
-def save_private_key (name: str, pvtkey: PrivateKeys) -> None:
+def save_private_key (name: str, pvtkey: PrivateKey) -> None:
     with open(keys_path / f"{name}.pem", "w") as pem_file:
         encoded_pvtkey = pvtkey.private_bytes(
             encoding=serialization.Encoding.PEM,
@@ -153,7 +157,7 @@ def save_private_key (name: str, pvtkey: PrivateKeys) -> None:
 
         pem_file.write(f"{decode_b64(encoded_pvtkey)}")
 
-def save_ratchet (chat_id: int, ratchet_name: str, ratchet: Ratchet) -> None:
+def save_ratchet (chat_id: int, ratchet_name: str, ratchet: Union[Ratchet, str]) -> None:
     ensure_dir(ratchets_path / f"{chat_id}/{ratchet_name}" )
     if isinstance(ratchet, X25519PrivateKey):
         with open(ratchets_path / f"{chat_id}/{ratchet_name}.pem", "w") as pem_file:
@@ -171,29 +175,71 @@ def save_ratchet (chat_id: int, ratchet_name: str, ratchet: Ratchet) -> None:
         with open(ratchets_path / f"{chat_id}/{ratchet_name}", "w") as sym_file:
             sym_file.write(f"{decode_b64(ratchet.state)}")
 
-def public_key (pvtkey: PrivateKeys) -> str:
+    elif isinstance(ratchet, str):
+        with open(ratchets_path / f"{chat_id}/{ratchet_name}", "w") as pbk_file:
+            pbk_file.write(f"{ratchet}")
+
+def load_key_from_file (
+    key_path: Path, key_name: str, method: str = "private", **kwargs
+) -> Key:
+    if method == "private":
+        with open(key_path / f"{key_name}.pem") as pem_file:
+            return serialization.load_pem_private_key(
+                backend=default_backend(),
+                password=encode_b64(os.environ["SECRET_KEY"]),
+                data=encode_b64("\n".join(pem_file.readlines()))
+            )
+    elif method == "symmetric":
+        with open(key_path / f"{key_name}") as sym_file:
+            return SymmetricRatchet(encode_b64(sym_file.readline()))
+
+    elif method == "public":
+        with open(key_path / f"{key_name}") as sym_file:
+            return load_public_key(sym_file.readline(), **kwargs)
+
+def load_ratchets (chat_id: int) -> tuple[dict[str, Ratchet], bytes]:
+    ratchets = dict()
+    for ratchet_name, ratchet_method in ratchets_iter:
+        ratchets[ratchet_name] = load_key_from_file(
+            ratchets_path / f"{chat_id}",
+            ratchet_name,
+            ratchet_method
+        )
+
+    pbkey = ratchets.pop("user_ratchet")
+
+    return ratchets, pbkey
+
+def public_key (key: Union[PrivateKey, PublicKey]) -> str:
+    if isinstance(key, X25519PrivateKey):
+        key = key.public_key()
+
+    if isinstance(key, Ed25519PrivateKey):
+        key = key.public_key()
+
     return decode_b64(
-        pvtkey.public_key().public_bytes(
+        key.public_bytes(
             encoding=serialization.Encoding.Raw,
             format=serialization.PublicFormat.Raw
         )
     )
+
+def load_public_key (pbkey: str, sgn_key: bool = False) -> PublicKey:
+    if sgn_key:
+        return Ed25519PublicKey.from_public_bytes(encode_b64(pbkey))
+    else:
+        return X25519PublicKey.from_public_bytes(encode_b64(pbkey))
 
 def sign_message (pvtkey: Ed25519PrivateKey) -> str:
     return decode_b64(
         pvtkey.sign(b"It's me, Mario")
     ).replace("\r", "").replace("\n", "")
 
-def load_private_key (name: str) -> PrivateKeys:
-    with open(keys_path / f"{name}.pem", "r") as pem_file:
-        return serialization.load_pem_private_key(
-            backend=default_backend(),
-            password=encode_b64(os.environ["SECRET_KEY"]),
-            data=encode_b64("\n".join(pem_file.readlines()))
-        )
+def load_private_key (name: str) -> PrivateKey:
+    return load_key_from_file(keys_path, name)
 
 def clean_keys () -> None:
     for item in os.listdir(keys_path):
         if item.endswith(".pem"):
             os.remove(keys_path / item)
-    shutil.rmtree(ratchets_path)
+    shutil.rmtree(ratchets_path, ignore_errors=True)
