@@ -1,5 +1,4 @@
 import json
-import flask
 from sqlalchemy.ext.declarative import DeclarativeMeta
 
 forbidden_fields = [
