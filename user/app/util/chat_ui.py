@@ -134,6 +134,7 @@ class ZapChat:
 
     async def send_message (self, chat_id: str, message: str) -> None:
         print(api.send_message(chat_id, message))
+        self._insert_message(message + '\n', "eu")
 
     async def ping (self) -> None:
         print(api.ping())
