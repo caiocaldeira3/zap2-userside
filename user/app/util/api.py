@@ -27,7 +27,7 @@ from app.util.json_encoder import ComplexEncoder
 @dc.dataclass()
 class Api:
 
-    base_url: str = dc.field(init=False, default="http://192.168.1.44:8080")
+    base_url: str = dc.field(init=False, default="http://192.168.1.53:8080/")
     headers_client: dict = dc.field(init=False, default=None)
     headers_user: dict = dc.field(init=False, default=None)
     device_url: str = dc.field(init=False, default=None)
@@ -38,7 +38,7 @@ class Api:
     ed_key: Ed25519PrivateKey = dc.field(init=False, default=None)
 
     def __init__ (self, logged_in: str = None, port: str = None) -> None:
-        self.device_url = f"http://192.168.1.44:{port if port is not None else 3030}"
+        self.device_url = f"http://192.168.1.53:{port if port is not None else 3030}"
         self.headers_client = {
             "Param-Auth": os.environ["CHAT_SECRET"]
         }
@@ -82,7 +82,7 @@ class Api:
 
             resp_json = response.json()
             if resp_json["status"] == "ok":
-                return True
+                return resp_json["msg"]
 
         except:
             return False
