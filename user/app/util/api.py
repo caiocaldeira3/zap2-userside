@@ -27,7 +27,7 @@ from app.util.json_encoder import ComplexEncoder
 @dc.dataclass()
 class Api:
 
-    base_url: str = dc.field(init=False, default="http://192.168.1.53:8080/")
+    base_url: str = dc.field(init=False, default="http://192.168.1.53:8080")
     headers_client: dict = dc.field(init=False, default=None)
     headers_user: dict = dc.field(init=False, default=None)
     device_url: str = dc.field(init=False, default=None)
