@@ -32,7 +32,6 @@ migrate = Migrate(app, db)
 
 # Import a module / component using its blueprint handler variable (mod_auth)
 
-from app.modules.auth.controller import mod_auth as auth_module
 from app.modules.user.controller import mod_user as user_module
 from app.util.api import Api
 
@@ -42,7 +41,6 @@ api = Api(
 )
 
 # Register blueprint(s)
-app.register_blueprint(auth_module)
 app.register_blueprint(user_module)
 # ..
 
