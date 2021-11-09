@@ -129,7 +129,7 @@ class ZapChat:
         api.signup(name, telephone, password)
 
     async def create_chat (self, chat_name: str, user_tel: str) -> None:
-        chat_id = await api.create_chat(chat_name, [ user_tel ])
+        chat_id = api.create_chat(chat_name, [ user_tel ])
         print(f"the new chat-id is {chat_id}")
 
     async def send_message (self, chat_id: str, message: str) -> None:
