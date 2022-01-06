@@ -207,30 +207,29 @@ class Api:
                 ratchets, pbkey, bmsg
             )
 
-            response = requests.post(
-                url=f"{self.base_url}/user/send-message/",
-                headers=self.headers_user,
-                json=json.dumps({
-                    "telephone": owner.telephone,
-                    "users": [ chat.users[0].telephone ],
-                    "chat_id": chat.chat_id,
+            sio.send({
+                "Signed-Message": self.sign_message(),
+                "telephone": owner.telephone,
+                "body": {
+                    "sender": {
+                        "telephone": owner.telephone,
+                        "chat_id": chat.id
+                    },
+                    "receiver": {
+                        "telephone": chat.users[0].telephone,
+                        "chat_id": chat.chat_id
+                    },
                     "cipher": crypto.decode_b64(cipher),
                     "dh_ratchet": new_ratchet_pbkey
-                })
-            )
+                }
+            })
 
-            resp_json = response.json()
-            if resp_json["status"] == "ok":
-                print(resp_json["msg"])
-
-                ratchets.pop("snd_ratchet", None)
-                ratchets["user_ratchet"] = resp_json["data"]["dh_ratchets"][0]
-                for ratchet_name, ratchet in ratchets.items():
-                    crypto.save_ratchet(chat_id, ratchet_name, ratchet)
-
-            else:
-                print ("Message not delivered")
+            ratchets.pop("snd_ratchet", None)
+            ratchets.pop("user_ratchet", None)
+            for ratchet_name, ratchet in ratchets.items():
+                crypto.save_ratchet(chat_id, ratchet_name, ratchet, tmp=True)
 
         except Exception as exc:
-            print("Message not delivered")
+            print(exc)
+
             raise exc
