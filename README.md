@@ -43,7 +43,7 @@ To create one session simply run `python run.py` on the user folder, inside the 
   * signup
   * create-chat
   * send-message
-  * <del>info</del>  
+  * info 
  
 As long as all the <i>devices</i> communicate with the same server you should be able to send message among repositories.  
 
