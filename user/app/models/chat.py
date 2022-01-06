@@ -6,7 +6,7 @@ from . import user_chat
 class Chat (db.Model):
 
     __tablename__   : str = "chat"
-    id         : db.Integer = db.Column(db.Integer, primary_key=True)
+    id              : db.Integer = db.Column(db.Integer, primary_key=True)
 
     # Chat Name
     name            : db.String = db.Column(db.String(128), nullable=False)
@@ -17,7 +17,7 @@ class Chat (db.Model):
 
     # Chat ID from other users
     # TODO -> Make it a list or a hash to unify
-    chat_id         : db.Integer = db.Column(db.Integer, nullable=False)
+    chat_id         : db.Integer = db.Column(db.Integer, nullable=True)
 
     # Extra Information
     description     : db.Text = db.Column(db.Text(500), nullable=True)

@@ -1,6 +1,8 @@
 import sys
+import socketio
+
 # Import flask and template operators
-from flask import Flask, wrappers
+from flask import Flask
 from flask_cors import CORS
 
 # Import SQLAlchemy
@@ -15,7 +17,7 @@ from flask_migrate import Migrate
 
 # Define the WSGI application object
 app = Flask(__name__)
-CORS(app)
+sio = socketio.Client()
 
 # Configurations
 app.config.from_object('config')
@@ -32,7 +34,6 @@ migrate = Migrate(app, db)
 
 # Import a module / component using its blueprint handler variable (mod_auth)
 
-from app.modules.user.controller import mod_user as user_module
 from app.util.api import Api
 
 api = Api(
@@ -41,7 +42,6 @@ api = Api(
 )
 
 # Register blueprint(s)
-app.register_blueprint(user_module)
 # ..
 
 # Build the database:

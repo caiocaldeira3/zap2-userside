@@ -247,3 +247,8 @@ def clean_keys () -> None:
         if item.endswith(".pem"):
             os.remove(keys_path / item)
     shutil.rmtree(ratchets_path, ignore_errors=True)
+
+def clean_chat_keys (chat_id: int, user_id: int) -> None:
+    for item in os.listdir(keys_path):
+        if item.endswith(f"{chat_id}-{user_id}.pem"):
+            os.remove(keys_path / item)
