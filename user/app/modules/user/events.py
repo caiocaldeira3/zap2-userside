@@ -76,7 +76,7 @@ def confirm_create_chat (data: dict) -> None:
     user = User.query.filter_by(telephone=data["user"]["telephone"]).one()
     user.name = data["user"]["name"]
 
-    chat = Chat.query.filter_by(id=data["owner"]["chat_id"])
+    chat = Chat.query.filter_by(id=data["owner"]["chat_id"]).one()
 
     db.session.add(user)
     db.session.add(chat)

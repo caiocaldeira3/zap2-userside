@@ -66,6 +66,7 @@ class Api:
 
     def _update_enviroment (self, key: str, value: str) -> None:
         environ_regex = re.compile(f"(?<={key}=).*")
+        os.environ[key] = str(value)
 
         with fileinput.FileInput(".env", inplace=True, backup=".bak") as env:
             for line in env:
