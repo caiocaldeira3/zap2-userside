@@ -141,7 +141,6 @@ def handle_message (resp: ResponseData) -> None:
     if resp["status"] == "pending":
         data = resp["data"]
 
-        print(data)
         receiver = User.query.filter_by(
             id=api.user_id,
             telephone=data["receiver"]["telephone"]
