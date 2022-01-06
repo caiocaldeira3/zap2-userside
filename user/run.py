@@ -1,4 +1,5 @@
 from app import api
+from app.models.user import User
 
 action = ""
 while action != "exit":
@@ -28,9 +29,14 @@ while action != "exit":
 
         api.send_message(chat_id, message)
 
+    elif action == "info":
+        print(f"user_id: {api.user_id}")
+        user = User.query.filter_by(id=api.user_id).one()
+        print(f"user-name: {user.name} | user-phone: {user.telephone}")
+
     else:
         print("Available actions:")
-        print("login | logout | signup | create-chat | send-message")
+        print("login | logout | signup | create-chat | send-message | info")
 
     action = input("action: ")
 
