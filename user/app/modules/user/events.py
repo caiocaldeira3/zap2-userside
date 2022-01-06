@@ -40,16 +40,13 @@ def handle_create_chat (resp: ResponseData) -> None:
         db.session.add(chat)
         db.session.commit()
 
-        import pprint
-        import json
-        pp = pprint.PrettyPrinter(indent=4)
-        pp.pprint(json.dumps({
+        print({
             "chat": {
                 "name": chat.name,
                 "id": chat.id,
                 "bob-id": chat.chat_id
             }
-        }))
+        })
 
         opkey = data["user"]["used_keys"][1]
         dh_ratchet_key = data["user"]["used_keys"][0]
@@ -117,16 +114,13 @@ def confirm_create_chat (resp: ResponseData) -> None:
             { "IK": api.id_key, "EK": eph_key }, pb_keys=user_keys, sender=True
         )
 
-        import pprint
-        import json
-        pp = pprint.PrettyPrinter(indent=4)
-        pp.pprint(json.dumps({
+        print({
             "chat": {
                 "name": chat.name,
                 "id": chat.id,
                 "bob-id": chat.chat_id
             }
-        }))
+        })
 
         crypto.save_ratchet(chat.id, "dh_ratchet", dh_ratchet)
         crypto.save_ratchet(chat.id, "user_ratchet", user_ratchet)
