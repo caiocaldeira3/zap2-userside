@@ -12,7 +12,7 @@ from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 base_path = Path(__file__).resolve().parent.parent
-dotenv.load_dotenv(base_path / ".env", override=False)
+dotenv.load_dotenv(base_path / ".env", override=True)
 
 import app.util.crypto as crypto
 
@@ -38,6 +38,7 @@ class Api:
         self.headers_client = {
             "Param-Auth": os.environ["CHAT_SECRET"]
         }
+        self.headers_user = self.headers_client
 
         if logged_in == "logged_in" and os.environ["USER_ID"] != -1:
             self.login()
@@ -62,7 +63,6 @@ class Api:
         self.ed_key = None
 
         self.update_header_user(logout=True)
-        self._update_enviroment("USER_ID", -1)
 
     def _update_enviroment (self, key: str, value: str) -> None:
         environ_regex = re.compile(f"(?<={key}=).*")
