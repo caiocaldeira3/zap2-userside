@@ -1,5 +1,5 @@
 from app.models.user import User
-from app.models.user import Chat
+from app.models.chat import Chat
 
 from app.util import crypto
 
