@@ -153,13 +153,21 @@ class Api:
         try:
             owner = User.query.filter_by(id=self.user_id).one()
 
-            db_users = [ User(telephone=user) for user in users ]
+            db_users = []
+            for user in users:
+                db_user = User.query.filter_by(telephone=user).first()
+                if db_user is None:
+                    db_user = User(telephone=user)
+
+                    db.session.add(db_user)
+
+                db_users.append(db_user)
+
             chat = Chat(
                 name=name,
                 users=db_users,
                 description=description
             )
-            db.session.add_all(db_users)
             db.session.add(chat)
             db.session.commit()
 
@@ -182,6 +190,9 @@ class Api:
             })
 
         except Exception as exc:
+            Chat.query.filter_by(id=chat.id).delete()
+            db.session.commit()
+
             raise exc
 
     def send_message (self, chat_id: int, msg: str) -> None:
