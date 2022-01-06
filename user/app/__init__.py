@@ -34,7 +34,7 @@ migrate = Migrate(app, db)
 
 # Import a module / component using its blueprint handler variable (mod_auth)
 from app.util.api import Api
-api = Api(logged_in=sys.argv[1] if len(sys.argv) >= 2 else None)
+api = Api()
 
 import app.modules.auth.events
 import app.modules.user.events

@@ -1,18 +1,37 @@
-import sys
-import asyncio
+from app import api
 
-from app import app
-from app.util.chat_ui import ZapChat
+action = ""
+while action != "exit":
+    if action == "login":
+        api.login()
+        api.ping()
 
-if __name__ == "__main__":
-    if len(sys.argv) == 3:
-        # zap = ZapChat("eu: ")
-        # asyncio.run(zap.run())
+    elif action == "logout":
+        api.disconnect()
 
-        app.run(host="0.0.0.0", port=sys.argv[2], debug=True)
+    elif action == "signup":
+        name = input("username: ")
+        phone = input("telephone: ")
+        password = input("password: ")
+
+        api.signup(name, phone, password)
+
+    elif action == "create-chat":
+        name = input("chatname: ")
+        user_phone = input("target user phone: ")
+
+        api.create_chat(name, [ user_phone ])
+
+    elif action == "send-message":
+        chat_id = input("chat_id: ")
+        message = input("message: ")
+
+        api.send_message(chat_id, message)
 
     else:
-        # zap = ZapChat("eu: ")
-        # asyncio.run(zap.run())
+        print("Available actions:")
+        print("login | logout | signup | create-chat | send-message")
 
-        app.run(host="0.0.0.0", port=3030, debug=True)
+    action = input("action: ")
+
+api.logout()
