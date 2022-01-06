@@ -27,10 +27,15 @@ After this project becomes robust enough I aim to:
   | Study the possibility of using algorithms for Self-Balancing networks on the P2P web and it's impact on limiting errors | :x: |
 
 ### Running the program
-
 Firstly it's necessary to have the zap2-serverside running on your localhost or web domain that your have configured. For that you should follow the instructions on [this repository](https://github.com/caiocaldeira3/zap2-serverside).
 
-Since the best way I found to storage the keys used in the encryption process was to save them locally on the repository folder, this repository is equivalent as one user. If you want to simulate multiple users chatting, for now, it is advised to clone as many times as you want users.
+Since the best way I found to storage the keys used in the encryption process was to save them locally on the repository folder, this repository is equivalent as one user. If you want to simulate multiple users chatting, for now, it is advised to clone as many times as you want users. This also mean it might be necessary to ensure that you have the folder, creating it, if necessary:
+
+├── zap2-userside  
+│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── scripts  
+│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── user  
+│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── util  
+│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── <b>encrypted_keys*</b>  
 
 To create one session simply run `python run.py` on the user folder, inside the repository, and experiment with the commands available:
   * login
