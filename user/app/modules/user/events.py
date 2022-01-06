@@ -31,6 +31,17 @@ def handle_create_chat (data):
     db.session.add(chat)
     db.session.commit()
 
+    import pprint
+    import json
+    pp = pprint.PrettyPrinter(indent=4)
+    pp.pprint(json.dumps({
+        "chat": {
+            "name": chat.name,
+            "id": chat.id,
+            "bob-id": chat.chat_id
+        }
+    }))
+
     opkey = data["user"]["used_keys"][1]
     dh_ratchet_key = data["user"]["used_keys"][0]
 
@@ -77,6 +88,7 @@ def confirm_create_chat (data: dict) -> None:
     user.name = data["user"]["name"]
 
     chat = Chat.query.filter_by(id=data["owner"]["chat_id"]).one()
+    chat.chat_id = data["user"]["chat_id"]
 
     db.session.add(user)
     db.session.add(chat)
@@ -90,6 +102,17 @@ def confirm_create_chat (data: dict) -> None:
     root_ratchet = crypto.create_chat_encryption(
         { "IK": api.id_key, "EK": eph_key }, pb_keys=user_keys, sender=True
     )
+
+    import pprint
+    import json
+    pp = pprint.PrettyPrinter(indent=4)
+    pp.pprint(json.dumps({
+        "chat": {
+            "name": chat.name,
+            "id": chat.id,
+            "bob-id": chat.chat_id
+        }
+    }))
 
     crypto.save_ratchet(chat.id, "dh_ratchet", dh_ratchet)
     crypto.save_ratchet(chat.id, "user_ratchet", user_ratchet)
