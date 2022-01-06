@@ -34,7 +34,7 @@ class Api:
     sgn_key: X25519PrivateKey = dc.field(init=False, default=None)
     ed_key: Ed25519PrivateKey = dc.field(init=False, default=None)
 
-    def __init__ (self, logged_in: str = None, port: str = None) -> None:
+    def __init__ (self, logged_in: str = None) -> None:
         self.headers_client = {
             "Param-Auth": os.environ["CHAT_SECRET"]
         }
