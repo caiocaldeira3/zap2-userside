@@ -5,10 +5,9 @@ action = ""
 while action != "exit":
     if action == "login":
         api.login()
-        api.ping()
 
     elif action == "logout":
-        api.disconnect()
+        api.logout()
 
     elif action == "signup":
         name = input("username: ")
@@ -30,9 +29,13 @@ while action != "exit":
         api.send_message(chat_id, message)
 
     elif action == "info":
-        print(f"user_id: {api.user_id}")
-        user = User.query.filter_by(id=api.user_id).one()
-        print(f"user-name: {user.name} | user-phone: {user.telephone}")
+        try:
+            print(f"user_id: {api.user_id}")
+            user = User.query.filter_by(id=api.user_id).one()
+            print(f"user-name: {user.name} | user-phone: {user.telephone}")
+
+        except Exception as exc:
+            print("user not logged in")
 
     else:
         print("Available actions:")
