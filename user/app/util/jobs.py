@@ -46,19 +46,19 @@ class RefreshJob (Job):
 
 class CreateChatJob (Job):
     def solve (self) -> None:
-        sio.emit("create-chat", data=self.data)
+        sio.emit("create-chat", self.data)
 
 class ConfirmCreateChatJob (Job):
     def solve (self) -> None:
-        sio.emit("confirm-create-chat", data=self.data)
+        sio.emit("confirm-create-chat", self.data)
 
 class SendMessageJob (Job):
     def solve (self) -> None:
-        sio.emit("send-message", data=self.data)
+        sio.send(self.data)
 
 class ConfirmMessageJob (Job):
     def solve (self) -> None:
-        sio.emit("confirm-message", data=self.data)
+        sio.emit("confirm-message", self.data)
 
 Jobs = Union[list[Job], dict[str, list[Job]]]
 
@@ -148,7 +148,7 @@ class JobQueue:
 
 
         for curr_priority in range(MIN_PRIORITY, MAX_PRIORITY):
-            if len(self.job_dict[user_id][priority]) > 0:
+            if len(self.job_dict[user_id][curr_priority]) > 0:
                 return
 
         self.job_dict.pop(user_id, None)

@@ -47,5 +47,5 @@ import app.modules.user.events
 # Build the database:
 # This will create the database file using SQLAlchemy
 
-threading.Thread(target=api.job_handler, daemon=True).start()
 db.create_all()
+threading.Thread(target=api.job_handler, daemon=True).start()
