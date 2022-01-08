@@ -1,5 +1,7 @@
 import os
+import time
 import dotenv
+import asyncio
 import fileinput
 import regex as re
 import dataclasses as dc
@@ -131,10 +133,7 @@ class Api:
             self._setdown_user()
             return ConnectionResults.FAILED
 
-    def signup (
-        self, name: str, telephone: str, password: str,
-        description: str = None, email: str = None
-    ) -> ConnectionResults:
+    def signup (self, name: str, telephone: str, password: str) -> ConnectionResults:
         self.id_key = crypto.generate_private_key("id_key")
         self.sgn_key = crypto.generate_private_key("sgn_key")
         self.ed_key = crypto.generate_private_key("ed_key", sgn_key=True)
@@ -148,32 +147,39 @@ class Api:
         ]
 
         try:
-            sio.connect(
-                self.base_url,
-                auth={
-                    key: value
-                    for key, value in vars().items()
-                    if key not in [ "self", "password" ] and value is not None
-                }, headers=self.headers_client
-            )
-
             user = User(
                 name=name,
                 telephone=telephone,
-                password=generate_password_hash(password),
-                email=email,
-                description=description
+                password=generate_password_hash(password)
             )
             db.session.add(user)
             db.session.commit()
 
             self.user_id = user.id
+
+            sio.connect(
+                self.base_url,
+                auth={
+                    "name": name,
+                    "telephone": telephone,
+                    "id_key": id_key,
+                    "sgn_key": sgn_key,
+                    "ed_key": ed_key,
+                    "opkeys": opkeys
+                }, headers=self.headers_client
+            )
+
             self._update_header_user()
             self._update_enviroment("USER_ID", self.user_id)
 
             return ConnectionResults.SUCESSFUL
 
         except ConnectionError:
+            User.query.filter_by(id=user.id).delete()
+            db.session.commit()
+
+            self._setdown_user()
+
             return ConnectionResults.FAILED
 
     def create_chat (
@@ -278,3 +284,13 @@ class Api:
             print(exc)
 
             return ConnectionResults.FAILED
+
+    async def _job_handler (self) -> None:
+        while True:
+            if self.user_id != -1:
+                job_queue.resolve_jobs(self.user_id)
+                time.sleep(5)
+
+    def job_handler (self) -> None:
+        asyncio.run(self._job_handler())
+

@@ -1,5 +1,5 @@
-import sys
 import socketio
+import threading
 
 # Import flask and template operators
 from flask import Flask
@@ -47,4 +47,5 @@ import app.modules.user.events
 # Build the database:
 # This will create the database file using SQLAlchemy
 
+threading.Thread(target=api.job_handler, daemon=True).start()
 db.create_all()
