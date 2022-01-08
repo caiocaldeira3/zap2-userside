@@ -1,15 +1,13 @@
 import time
-import threading
 import dataclasses as dc
 
 from typing import Union
+from flask_socketio import emit, send
 from abc import ABCMeta, ABC, abstractmethod
 
 from app.util.exc import (
     JobResolutionConfigurationError, MissingChatId, NotJobInstance, PriorityRangeError
 )
-
-from app import sio
 
 RequestData = dict[str, Union[str, dict[str, str]]]
 MAX_RETRIES = 5
@@ -46,19 +44,19 @@ class RefreshJob (Job):
 
 class CreateChatJob (Job):
     def solve (self) -> None:
-        sio.emit("create-chat", self.data)
+        emit("create-chat", self.data)
 
 class ConfirmCreateChatJob (Job):
     def solve (self) -> None:
-        sio.emit("confirm-create-chat", self.data)
+        emit("confirm-create-chat", self.data)
 
 class SendMessageJob (Job):
     def solve (self) -> None:
-        sio.send(self.data)
+        send(self.data)
 
 class ConfirmMessageJob (Job):
     def solve (self) -> None:
-        sio.emit("confirm-message", self.data)
+        emit("confirm-message", self.data)
 
 Jobs = Union[list[Job], dict[str, list[Job]]]
 
