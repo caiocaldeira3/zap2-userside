@@ -1,13 +1,13 @@
-wheel
 Flask>=2.0.1
 flask-sqlalchemy>=2.5.1
 flask-socketio>=5.1.1f
 Flask-Migrate>=3.0.1
 python-dotenv>=0.17.1
-cryptography==35.0.0
+cryptography>=36.0.0
+python-socketio>=5.5.0
 websocket-client
 dataclasses
+requests
 flask_cors
 eventlet
-socketio
 regex
