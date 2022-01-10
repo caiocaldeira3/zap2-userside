@@ -26,12 +26,15 @@ print("logging out")
 api.logout()
 
 time.sleep(10)
-api.login()
 print()
+
+print("logging in")
+api.login()
 
 time.sleep(6)
 print()
 
+print("logging out")
 api.logout()
 time.sleep(2)
 

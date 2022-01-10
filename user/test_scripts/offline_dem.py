@@ -20,7 +20,7 @@ api.login()
 time.sleep(2)
 print()
 
-print("create chat with offline user")
+print("create chat")
 api.create_chat(chat_name, [ other_phone ])
 time.sleep(2)
 print()
@@ -37,7 +37,7 @@ time.sleep(8)
 print()
 
 chat = Chat.query.filter_by(name=chat_name).one()
-print("sending message to offline user")
+print("sending message")
 api.send_message(chat.id, "oi bob", debug=True)
 
 time.sleep(2)

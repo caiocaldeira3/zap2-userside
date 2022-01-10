@@ -236,7 +236,7 @@ class Api:
         except Exception as exc:
             return ConnectionResults.FAILED
 
-    def send_message (self, chat_id: int, msg: str, debug: bool = True) -> ConnectionResults:
+    def send_message (self, chat_id: int, msg: str, debug: bool = False) -> ConnectionResults:
         try:
             owner = User.query.filter_by(id=self.user_id).one()
             chat = Chat.query.filter_by(id=chat_id).one()

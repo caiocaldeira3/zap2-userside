@@ -26,20 +26,22 @@ time.sleep(4)
 print()
 
 chat = Chat.query.filter_by(name=chat_name).one()
-print("sending messages with online user")
+print("sending message")
 api.send_message(chat.id, "oi bob", debug=True)
 
-time.sleep(2)
+time.sleep(3)
 print()
 
 print("receive bob message")
 time.sleep(2)
 print()
 
+print("sending message")
 api.send_message(chat.id, "te odeio bob", debug=True)
 time.sleep(2)
 print()
 
+print("sending message")
 api.send_message(chat.id, "brinks", debug=True)
 time.sleep(2)
 print()
