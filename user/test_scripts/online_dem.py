@@ -33,7 +33,7 @@ time.sleep(3)
 print()
 
 print("receive bob message")
-time.sleep(2)
+time.sleep(3)
 print()
 
 print("sending message")
