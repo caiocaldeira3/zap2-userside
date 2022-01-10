@@ -15,7 +15,7 @@ from app import api
 time.sleep(5)
 
 api.login()
-other_phone = sys.argv[2] if len(sys.argv) == 3 else "alice"
+other_phone = sys.argv[2] if len(sys.argv) == 3 else "alc"
 chat_name = sys.argv[1] if len(sys.argv) >= 2 else "server"
 
 time.sleep(5)
