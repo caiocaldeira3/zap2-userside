@@ -11,39 +11,41 @@ from app.models.chat import Chat
 
 from app import api
 
-other_phone = sys.argv[2] if len(sys.argv) == 3 else "alice"
+other_phone = sys.argv[2] if len(sys.argv) == 3 else "bob"
 chat_name = sys.argv[1] if len(sys.argv) >= 2 else "server"
 print(f"other phone is: {other_phone}\n")
 
 print("wait for authentication")
 api.login()
-time.sleep(14)
+time.sleep(15)
 print()
 
-print("create chat with online user")
+print("create chat")
 api.create_chat(chat_name, [ other_phone ])
-time.sleep(10)
+time.sleep(5)
 print()
 
 chat = Chat.query.filter_by(name=chat_name).one()
 print(chat.id)
-print("sending messages with online user")
+print("sending messages")
 api.send_message(chat.id, "oi bob", debug=True)
 
-time.sleep(2)
+time.sleep(3)
 print()
 
-print("receive bob message")
-time.sleep(2)
+print("receive message")
+time.sleep(5)
 print()
 
+print("sending message")
 api.send_message(chat.id, "te odeio bob", debug=True)
-time.sleep(2)
+time.sleep(5)
 print()
 
+print("sending message")
 api.send_message(chat.id, "brinks", debug=True)
-time.sleep(2)
+time.sleep(5)
 print()
 
-time.sleep(2)
+time.sleep(5)
 api.logout()

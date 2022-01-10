@@ -20,7 +20,7 @@ api.login()
 time.sleep(6)
 print()
 
-print("create chat with online user")
+print("create chat")
 api.create_chat(chat_name, [ other_phone ])
 time.sleep(4)
 print()
@@ -32,7 +32,7 @@ api.send_message(chat.id, "oi bob", debug=True)
 time.sleep(3)
 print()
 
-print("receive bob message")
+print("receive message")
 time.sleep(3)
 print()
 
