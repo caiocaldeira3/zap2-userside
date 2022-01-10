@@ -27,7 +27,7 @@ print()
 
 print("logging out")
 api.logout()
-time.sleep(12)
+time.sleep(14)
 print()
 
 print("logging in")
