@@ -12,7 +12,7 @@ from app.models.chat import Chat
 from app import api
 
 other_phone = sys.argv[2] if len(sys.argv) == 3 else "bob"
-chat_name = sys.argv[1] if len(sys.argv) >= 2 else "whoops"
+chat_name = sys.argv[1] if len(sys.argv) >= 2 else "online"
 print(f"other phone is: {other_phone}\n")
 
 print("wait for authentication")

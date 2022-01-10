@@ -33,6 +33,7 @@ print("wait for logout")
 api.logout()
 
 time.sleep(2)
+print()
 
 print("wait for authentication")
 api.login()

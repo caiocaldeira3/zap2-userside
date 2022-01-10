@@ -12,7 +12,7 @@ from app.models.chat import Chat
 from app import api
 
 other_phone = sys.argv[2] if len(sys.argv) == 3 else "bob"
-chat_name = sys.argv[1] if len(sys.argv) >= 2 else "whoops"
+chat_name = sys.argv[1] if len(sys.argv) >= 2 else "offline"
 print(f"other phone is: {other_phone}\n")
 
 print("wait for authentication")
@@ -33,7 +33,7 @@ print()
 print("logging in")
 api.login()
 
-time.sleep(6)
+time.sleep(8)
 print()
 
 chat = Chat.query.filter_by(name=chat_name).one()

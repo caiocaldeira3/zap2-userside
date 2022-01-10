@@ -16,7 +16,7 @@ time.sleep(2)
 
 api.login()
 other_phone = sys.argv[2] if len(sys.argv) == 3 else "alice"
-chat_name = sys.argv[1] if len(sys.argv) >= 2 else "whoops"
+chat_name = sys.argv[1] if len(sys.argv) >= 2 else "server"
 
 time.sleep(2)
 user = User.query.filter_by(id=api.user_id).one()

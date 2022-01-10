@@ -17,9 +17,9 @@ print()
 print("logging in")
 api.login()
 other_phone = sys.argv[2] if len(sys.argv) == 3 else "alice"
-chat_name = sys.argv[1] if len(sys.argv) >= 2 else "whoops"
+chat_name = sys.argv[1] if len(sys.argv) >= 2 else "offline"
 
-time.sleep(8)
+time.sleep(10)
 print()
 
 print("logging out")
