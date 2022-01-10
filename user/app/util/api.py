@@ -15,7 +15,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from sqlalchemy.exc import NoResultFound
 from socketio.exceptions import ConnectionError
 
-base_path = Path(__file__).resolve().parent.parent
+base_path = Path(__file__).resolve().parent.parent.parent
 dotenv.load_dotenv(base_path / ".env", override=True)
 
 import app.util.crypto as crypto
@@ -78,7 +78,7 @@ class Api:
         environ_regex = re.compile(f"(?<={key}=).*")
         os.environ[key] = str(value)
 
-        with fileinput.FileInput(".env", inplace=True, backup=".bak") as env:
+        with fileinput.FileInput(base_path / ".env", inplace=True, backup=".bak") as env:
             for line in env:
                 print(environ_regex.sub(f"{value}", line), end="")
 
