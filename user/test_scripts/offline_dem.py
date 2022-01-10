@@ -38,7 +38,7 @@ print()
 
 chat = Chat.query.filter_by(name=chat_name).one()
 print("sending message to offline user")
-api.send_message(chat.id, "oi bob")
+api.send_message(chat.id, "oi bob", debug=True)
 
 time.sleep(2)
 print()

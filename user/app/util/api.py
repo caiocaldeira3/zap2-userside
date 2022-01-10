@@ -236,7 +236,7 @@ class Api:
         except Exception as exc:
             return ConnectionResults.FAILED
 
-    def send_message (self, chat_id: int, msg: str) -> ConnectionResults:
+    def send_message (self, chat_id: int, msg: str, debug: bool = True) -> ConnectionResults:
         try:
             owner = User.query.filter_by(id=self.user_id).one()
             chat = Chat.query.filter_by(id=chat_id).one()
@@ -246,6 +246,9 @@ class Api:
             cipher, new_ratchet_pbkey = crypto.snd_msg(
                 ratchets, pbkey, bmsg
             )
+
+            if debug:
+                print(f"encoded message -> {cipher}")
 
             data = {
                 "Signed-Message": self.sign_message(),
