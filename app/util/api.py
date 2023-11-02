@@ -1,32 +1,28 @@
+import asyncio
+import dataclasses as dc
+import fileinput
 import os
 import time
-import dotenv
-import asyncio
-import fileinput
-import regex as re
-import dataclasses as dc
-
+from enum import Enum, auto
 from pathlib import Path
-from enum import auto, Enum
-from werkzeug.security import generate_password_hash
-from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
-from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
-from sqlalchemy.exc import NoResultFound
+import dotenv
+import regex as re
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
 from socketio.exceptions import ConnectionError
+from sqlalchemy.exc import NoResultFound
+from werkzeug.security import generate_password_hash
 
 base_path = Path(__file__).resolve().parent.parent.parent
 dotenv.load_dotenv(base_path / ".env", override=True)
 
 import app.util.crypto as crypto
 import app.util.jobs as jobs
-
-from app.models.user import User
+from app import db, job_queue, sio
 from app.models.chat import Chat
+from app.models.user import User
 
-from app import db
-from app import sio
-from app import job_queue
 
 class ConnectionResults (Enum):
     SUCESSFUL   = auto()

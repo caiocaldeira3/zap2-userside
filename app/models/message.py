@@ -1,5 +1,6 @@
 from app import db
 
+
 # Define a Message model
 class Message (db.Model):
 

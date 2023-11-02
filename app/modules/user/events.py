@@ -1,18 +1,10 @@
 from typing import Union
 
-from app.models.user import User
-from app.models.chat import Chat
-
-from app.util import crypto
 import app.util.jobs as jobs
-
-from app.models.user import User
+from app import api, db, job_queue, sio
 from app.models.chat import Chat
-
-from app import db
-from app import api
-from app import sio
-from app import job_queue
+from app.models.user import User
+from app.util import crypto
 
 ResponseData = dict[str, Union[str, dict[str, str]]]
 

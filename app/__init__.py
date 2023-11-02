@@ -1,14 +1,12 @@
-import socketio
 import threading
 
+import socketio
 # Import flask and template operators
 from flask import Flask
-
-# Import SQLAlchemy
-from flask_sqlalchemy import SQLAlchemy
-
 # Import Migration Module
 from flask_migrate import Migrate
+# Import SQLAlchemy
+from flask_sqlalchemy import SQLAlchemy
 
 # Import Util Modules
 
@@ -33,9 +31,11 @@ migrate = Migrate(app, db)
 
 # Import a module / component using its blueprint handler variable (mod_auth)
 from app.util.jobs import JobQueue
+
 job_queue = JobQueue()
 
 from app.util.api import Api
+
 api = Api()
 
 import app.modules.auth.events

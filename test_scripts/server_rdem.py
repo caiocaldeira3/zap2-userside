@@ -1,16 +1,14 @@
 import sys
 import time
-
 from pathlib import Path
 
 app_path = Path(__file__).parent.parent
 
 sys.path.append(str(app_path))
 
+from app import api
 from app.models.chat import Chat
 from app.models.user import User
-
-from app import api
 
 time.sleep(5)
 

@@ -1,6 +1,7 @@
 from app import db
 from app.models import user_chat
 
+
 # Define a User model
 class User (db.Model):
 

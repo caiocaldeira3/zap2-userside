@@ -1,13 +1,12 @@
-import time
 import dataclasses as dc
-
+import time
+from abc import ABC, ABCMeta, abstractmethod
 from typing import Union
-from flask_socketio import emit, send
-from abc import ABCMeta, ABC, abstractmethod
 
-from app.util.exc import (
-    JobResolutionConfigurationError, MissingChatId, NotJobInstance, PriorityRangeError
-)
+from flask_socketio import emit, send
+
+from app.util.exc import (JobResolutionConfigurationError, MissingChatId,
+                          NotJobInstance, PriorityRangeError)
 
 RequestData = dict[str, Union[str, dict[str, str]]]
 MAX_RETRIES = 5

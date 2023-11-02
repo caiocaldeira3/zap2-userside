@@ -1,17 +1,18 @@
+import base64
 import os
 import shutil
-import dotenv
-import base64
-
-from typing import Union
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.hkdf import HKDF
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey
-from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey, X25519PublicKey
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from cryptography.hazmat.backends import default_backend
 from pathlib import Path
+from typing import Union
+
+import dotenv
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric.ed25519 import (
+    Ed25519PrivateKey, Ed25519PublicKey)
+from cryptography.hazmat.primitives.asymmetric.x25519 import (X25519PrivateKey,
+                                                              X25519PublicKey)
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 
 base_path = Path(__file__).resolve().parent.parent.parent
 ratchets_path = base_path / "app/util/ratchets"
@@ -23,7 +24,7 @@ ratchets_iter = [
     ("dh_ratchet", "private"), ("root_ratchet", "symmetric"), ("user_ratchet", "public")
 ]
 
-class SymmetricRatchet(object):
+class SymmetricRatchet:
     def __init__ (self, key: bytes):
         self.state = key
 
@@ -162,7 +163,7 @@ def save_private_key (name: str, pvtkey: PrivateKey) -> None:
         pem_file.write(f"{decode_b64(encoded_pvtkey)}")
 
 def save_ratchet (
-    chat_id: int, ratchet_name: str, ratchet: Union[Ratchet, str], tmp: bool = False
+    chat_id: int, ratchet_name: str, ratchet: Ratchet | str, tmp: bool = False
 ) -> None:
     if tmp:
         ratchet_name = f"tmp-{ratchet_name}"
@@ -235,7 +236,7 @@ def load_ratchets (chat_id: int, tmp: bool = False) -> tuple[dict[str, Ratchet],
 
     return ratchets, pbkey
 
-def public_key (key: Union[PrivateKey, PublicKey]) -> str:
+def public_key (key: PrivateKey | PublicKey) -> str:
     if isinstance(key, X25519PrivateKey):
         key = key.public_key()
 

@@ -2,6 +2,7 @@ from app import db
 
 from . import user_chat
 
+
 # Define a Chat model
 class Chat (db.Model):
 

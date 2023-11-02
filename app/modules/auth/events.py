@@ -1,13 +1,8 @@
 from typing import Union
 
+from app import api, db, job_queue, sio
 from app.models.user import User
-
 from app.util.jobs import RefreshJob
-
-from app import db
-from app import api
-from app import sio
-from app import job_queue
 
 ResponseData = dict[str, Union[str, dict[str, str]]]
 

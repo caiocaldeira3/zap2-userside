@@ -1,7 +1,10 @@
+from crypto import (PrivateKey, PublicKey, decode_b64, init_root_ratchet,
+                    load_public_key, rcv_msg, receiver_x3dh, sender_x3dh,
+                    snd_msg)
 from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
-from crypto import *
 
-class keyzeds (object):
+
+class Keyzeds:
     def private_keys (self) -> dict[str, PrivateKey]:
         return self.__dict__
 
@@ -12,7 +15,7 @@ class keyzeds (object):
             if isinstance(self.__getattribute__(attr), X25519PrivateKey)
         }
 
-class Bob(keyzeds):
+class Bob (Keyzeds):
     def __init__(self):
         # generate Bob's keys
         self.IK = X25519PrivateKey.generate()
@@ -21,7 +24,7 @@ class Bob(keyzeds):
 
         self.dh_ratchet = X25519PrivateKey.generate()
 
-class Alice(keyzeds):
+class Alice (Keyzeds):
     def __init__(self):
         # generate Alice's keys
         self.IK = X25519PrivateKey.generate()

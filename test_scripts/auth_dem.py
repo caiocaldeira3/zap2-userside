@@ -1,6 +1,5 @@
 import sys
 import time
-
 from pathlib import Path
 
 app_path = Path(__file__).parent.parent
