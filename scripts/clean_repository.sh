@@ -1,6 +1,5 @@
 #!/bin/bash
 
 python clean_user_keys.py
+python clean_database.py
 
-cd ../user
-../scripts/clean_database.sh user
