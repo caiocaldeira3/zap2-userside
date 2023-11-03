@@ -141,6 +141,9 @@ def snd_msg (
 def rcv_msg (
     ratchets: dict[str, Ratchet], pbkey: bytes, enc_msg: bytes
 ) -> bytes:
+    if isinstance(pbkey, str):
+        pbkey = load_public_key(pbkey)
+
     dh_ratchet_rotation_receive(ratchets, pbkey)
     key, init_vector = ratchets["rcv_ratchet"].next()
     cipher = Cipher(algorithms.AES(key), modes.CBC(init_vector))
