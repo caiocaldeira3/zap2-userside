@@ -6,7 +6,6 @@ from enum import Enum, auto
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
 from socketio.exceptions import ConnectionError
-from sqlalchemy.exc import NoResultFound
 from werkzeug.security import generate_password_hash
 
 from app import job_queue, sio
@@ -44,7 +43,7 @@ class Api:
 
         elif logged_in:
             print("Api has not any session stored")
-            raise Exception
+            raise ValueError
 
     def _setup_user (self) -> None:
         self.user_id = config.USER_ID
@@ -99,12 +98,6 @@ class Api:
         except ConnectionError as exc:
             self._setdown_user()
 
-            return ConnectionResults.FAILED
-
-        except NoResultFound as exc:
-            print("User not found on client database")
-
-            self._setdown_user()
             return ConnectionResults.FAILED
 
         except Exception as exc:
@@ -249,9 +242,6 @@ class Api:
             job_queue.add_job(self.user_id, 2, jobs.SendMessageJob, data, chat._id)
 
             return ConnectionResults.RETRY
-
-        except NoResultFound:
-            return ConnectionResults.FAILED
 
         except Exception as exc:
             print(exc)
