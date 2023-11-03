@@ -1,5 +1,9 @@
+from gevent import monkey
+
+_ = monkey.patch_all()
+
 from app import api
-from app.models.user import User
+from app.services import user as ussr
 
 action = ""
 while action != "exit":
@@ -31,7 +35,7 @@ while action != "exit":
     elif action == "info":
         try:
             print(f"user_id: {api.user_id}")
-            user = User.query.filter_by(id=api.user_id).one()
+            user = ussr.find_with_id(api.user_id)
             print(f"user-name: {user.name} | user-phone: {user.telephone}")
 
         except Exception as exc:

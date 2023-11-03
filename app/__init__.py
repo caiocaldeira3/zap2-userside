@@ -1,28 +1,16 @@
 import threading
 
 import socketio
-# Import flask and template operators
 from flask import Flask
-# Import Migration Module
-from flask_migrate import Migrate
-# Import SQLAlchemy
-from flask_sqlalchemy import SQLAlchemy
 
-# Import Util Modules
-
-# from app.util.responses import NotFoundError
+from app.util import config
 
 # Define the WSGI application object
 app = Flask(__name__)
 sio = socketio.Client()
 
 # Configurations
-app.config.from_object('config')
-
-# Define the database object which is imported
-# by modules and controllers
-db = SQLAlchemy(app)
-migrate = Migrate(app, db)
+app.config.from_object(config)
 
 # Sample HTTP error handling
 #@app.errorhandler(404)
@@ -46,6 +34,4 @@ import app.modules.user.events
 
 # Build the database:
 # This will create the database file using SQLAlchemy
-
-db.create_all()
 threading.Thread(target=api.job_handler, daemon=True).start()

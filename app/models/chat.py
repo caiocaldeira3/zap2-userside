@@ -1,33 +1,46 @@
-from app import db
+import dataclasses as dc
+from datetime import datetime
+from typing import Any
 
-from . import user_chat
+import pytz
+from bson import ObjectId
 
 
-# Define a Chat model
-class Chat (db.Model):
+@dc.dataclass()
+class Message:
+    message: str
+    user_id: ObjectId
+    time_sent: datetime = dc.field(default_factory=lambda: datetime.now(pytz.utc))
 
-    __tablename__   : str = "chat"
-    id              : db.Integer = db.Column(db.Integer, primary_key=True)
+    def to_insert (self) -> dict[str, Any]:
+        return {
+            field.name: self.__getattribute__(field.name)
+            for field in dc.fields(Message)
+        }
 
-    # Chat Name
-    name            : db.String = db.Column(db.String(128), nullable=False)
-    date_created    : db.DateTime = db.Column(db.DateTime, default=db.func.now())
-    date_modified   : db.DateTime = db.Column(
-        db.DateTime,  default=db.func.now(), onupdate=db.func.now()
-    )
 
-    # Chat ID from other users
-    # TODO -> Make it a list or a hash to unify
-    chat_id         : db.Integer = db.Column(db.Integer, nullable=True)
+@dc.dataclass()
+class Chat:
+    users: list[ObjectId]
+    messages: list[Message] = dc.field(default_factory=list)
+    name: str = dc.field(default="default chat")
+    desc: str = dc.field(default="default desc")
+    ctime: datetime = dc.field(default_factory=lambda: datetime.now(pytz.utc))
+    mtime: datetime = dc.field(default_factory=lambda: datetime.now(pytz.utc))
+    back_id: ObjectId = dc.field(default=None)
+    _id: ObjectId = dc.field(default_factory=ObjectId)
 
-    # Extra Information
-    description     : db.Text = db.Column(db.Text(500), nullable=True)
+    def __post_init__ (self) -> None:
+        self.messages = [
+            Message(**key) if not isinstance(key, Message) else key
+            for key in self.messages
+        ]
 
-    # Foreign Keys
-    # messages       : any = db.relationship("Message", backref="sender")
-    users           : any = db.relationship(
-        "User", secondary=user_chat, backref=db.backref("chats", lazy="dynamic")
-    )
-
-    def __repr__ (self) -> str:
-        return f"<Chat {self.name}>"
+    def to_insert (self) -> dict[str, Any]:
+        return {
+            field.name: (
+                self.__getattribute__(field.name)
+                if field.name != "messages" else
+                [ key.to_insert() for key in self.messages ]
+            ) for field in dc.fields(Chat)
+        }

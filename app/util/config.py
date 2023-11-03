@@ -1,10 +1,16 @@
+import fileinput
 import os
-import dotenv
-
+import sys
 from pathlib import Path
 
-base_path = Path(__file__).resolve().parent
+import dotenv
+import regex as re
+
+base_path = Path(__file__).resolve().parent.parent.parent
 dotenv.load_dotenv(base_path / ".env", override=True)
+
+sys.path.append(str(base_path))
+
 
 # Statement for enabling the development environment
 DEBUG = True
@@ -12,12 +18,12 @@ DEBUG = True
 # Define the application directory
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-# Define the database - we are working with
-# SQLite for this example
-SQLALCHEMY_DATABASE_URI = "sqlite:///" + os.path.join(BASE_DIR, "app.db")
-SQLALCHEMY_TRACK_MODIFICATIONS = False
+MONGO_CONN = os.environ["MONGO_CONNECTION_STRING"]
+MONGO_DB = os.environ["MONGO_DATABASE"]
+CHAT_SECRET = os.environ["CHAT_SECRET"]
+SECRET_KEY = os.environ["SECRET_KEY"]
 
-DATABASE_CONNECT_OPTIONS = {}
+USER_ID = os.environ["USER_ID"]
 
 # Application threads. A common general assumption is
 # using 2 per available processor cores - to handle
@@ -34,3 +40,14 @@ CSRF_SESSION_KEY = "W1JKKarQaco3qtBhwfpToqIrK3ATRP9q"
 
 # Secret key for signing cookies
 SECRET_KEY = os.environ["SECRET_KEY"]
+
+def update_user_id (value: str) -> None:
+    global USER_ID
+    environ_regex = re.compile(f"(?<=USER_ID=).*")
+    os.environ["USER_ID"] = str(value)
+
+    with fileinput.FileInput(base_path / ".env", inplace=True, backup=".bak") as env:
+        for line in env:
+            print(environ_regex.sub(f"{value}", line), end="")
+
+    USER_ID = value

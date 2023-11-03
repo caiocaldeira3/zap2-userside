@@ -1,9 +1,11 @@
 from typing import Union
 
 import app.util.jobs as jobs
-from app import api, db, job_queue, sio
+from app import api, job_queue, sio
 from app.models.chat import Chat
 from app.models.user import User
+from app.services import chat as chsr
+from app.services import user as ussr
 from app.util import crypto
 
 ResponseData = dict[str, Union[str, dict[str, str]]]
@@ -15,33 +17,32 @@ def handle_create_chat (resp: ResponseData) -> None:
     if resp["status"] == "pending":
         data = resp["data"]
 
-        user = User.query.filter_by(id=api.user_id).one()
-        owner = User.query.filter_by(telephone=data["owner"]["telephone"]).first()
+        user = ussr.find_with_id(api.user_id)
+        owner = ussr.find_with_telephone(data["owner"]["telephone"])
+
         if owner is None:
             owner = User(
                 name=data["owner"]["name"],
                 telephone=data["owner"]["telephone"],
-                description=data["owner"]["description"]
+                desc=data["owner"]["description"]
             )
 
-            db.session.add(owner)
-            db.session.commit()
+            ussr.insert_user(owner)
 
         chat = Chat(
-            name = data["name"],
-            users = [ owner ],
-            chat_id = data["owner"]["chat_id"],
-            description = data.get("description", None)
+            back_id=data["owner"]["chat_id"],
+            users=[ owner.telephone ],
+            name=data["name"],
+            desc=data.get("description", "default description")
         )
 
-        db.session.add(chat)
-        db.session.commit()
+        chsr.insert_chat(chat)
 
         print({
             "chat": {
                 "name": chat.name,
-                "id": chat.id,
-                "bob-id": chat.chat_id
+                "bob-id": chat.back_id,
+                "id": chat._id
             }
         })
 
@@ -59,9 +60,9 @@ def handle_create_chat (resp: ResponseData) -> None:
             pvt_keys, data["owner"]["keys"]["pb_keys"], sender=False
         )
 
-        crypto.save_ratchet(chat.id, "dh_ratchet", dh_ratchet)
-        crypto.save_ratchet(chat.id, "user_ratchet", user_ratchet)
-        crypto.save_ratchet(chat.id, "root_ratchet", root_ratchet)
+        crypto.save_ratchet(chat._id, "dh_ratchet", dh_ratchet)
+        crypto.save_ratchet(chat._id, "user_ratchet", user_ratchet)
+        crypto.save_ratchet(chat._id, "root_ratchet", root_ratchet)
 
         try:
             data = {
@@ -75,7 +76,7 @@ def handle_create_chat (resp: ResponseData) -> None:
                     "user": {
                         "name": user.name,
                         "telephone": user.telephone,
-                        "chat_id": chat.id,
+                        "chat_id": str(chat._id),
                         "keys": {
                             "dh_ratchet": crypto.public_key(dh_ratchet),
                             "OPK": crypto.public_key(pvt_keys["OPK"]),
@@ -88,11 +89,11 @@ def handle_create_chat (resp: ResponseData) -> None:
             sio.emit("confirm-create-chat", data)
 
         except ConnectionRefusedError:
-            print(f"Retry to send the confirmation of the creation of the chat {chat.id}")
+            print(f"Retry to send the confirmation of the creation of the chat {chat._id}")
             job_queue.add_job(api.user_id, 1, jobs.ConfirmCreateChatJob, data=data)
 
         except Exception as exc:
-            print(f"Unkown error happened creating the chat {chat.id}")
+            print(f"Unkown error happened creating the chat {chat._id}")
             raise exc
 
 @sio.on("confirm-create-chat")
@@ -102,18 +103,19 @@ def confirm_create_chat (resp: ResponseData) -> None:
     if resp["status"] == "ok":
         data = resp["data"]
 
-        user = User.query.filter_by(telephone=data["user"]["telephone"]).one()
-        user.name = data["user"]["name"]
+        user = ussr.find_with_telephone(data["user"]["telephone"])
 
-        chat = Chat.query.filter_by(id=data["owner"]["chat_id"]).one()
-        chat.chat_id = data["user"]["chat_id"]
+        user_name = data["user"]["name"]
+        if user.name == "default user" and user.name != user_name:
+            ussr.update_user_name(user._id, user_name)
 
-        db.session.add(user)
-        db.session.add(chat)
-        db.session.commit()
+        chsr.update_back_id(
+            data["owner"]["chat_id"], data["user"]["chat_id"]
+        )
+        chat = chsr.find_with_id(data["owner"]["chat_id"])
 
-        eph_key = crypto.load_private_key(f"eph-{chat.id}-{api.user_id}")
-        dh_ratchet = crypto.load_private_key(f"dhr-{chat.id}-{api.user_id}")
+        eph_key = crypto.load_private_key(f"eph-{chat._id}-{api.user_id}")
+        dh_ratchet = crypto.load_private_key(f"dhr-{chat._id}-{api.user_id}")
 
         user_ratchet = data["user"]["keys"].pop("dh_ratchet")
         user_keys = data["user"]["keys"]
@@ -124,16 +126,16 @@ def confirm_create_chat (resp: ResponseData) -> None:
         print({
             "chat": {
                 "name": chat.name,
-                "id": chat.id,
-                "bob-id": chat.chat_id
+                "bob-id": chat.back_id,
+                "id": chat._id,
             }
         })
 
-        crypto.save_ratchet(chat.id, "dh_ratchet", dh_ratchet)
-        crypto.save_ratchet(chat.id, "user_ratchet", user_ratchet)
-        crypto.save_ratchet(chat.id, "root_ratchet", root_ratchet)
+        crypto.save_ratchet(chat._id, "dh_ratchet", dh_ratchet)
+        crypto.save_ratchet(chat._id, "user_ratchet", user_ratchet)
+        crypto.save_ratchet(chat._id, "root_ratchet", root_ratchet)
 
-        crypto.clean_chat_keys(chat.id, api.user_id)
+        crypto.clean_chat_keys(chat._id, api.user_id)
 
 @sio.on("message")
 def handle_message (resp: ResponseData) -> None:
@@ -142,12 +144,9 @@ def handle_message (resp: ResponseData) -> None:
     if resp["status"] == "pending":
         data = resp["data"]
 
-        receiver = User.query.filter_by(
-            id=api.user_id,
-            telephone=data["receiver"]["telephone"]
-        ).one()
-
+        receiver = ussr.find_with_id(api.user_id)
         chat_id = data["receiver"]["chat_id"]
+
         cipher = crypto.encode_b64(data["cipher"])
         pbkey = crypto.load_public_key(data["dh_ratchet"])
         ratchets, _ = crypto.load_ratchets(chat_id)

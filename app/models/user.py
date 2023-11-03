@@ -1,26 +1,19 @@
-from app import db
-from app.models import user_chat
+import dataclasses as dc
+from typing import Any
+
+from bson import ObjectId
 
 
-# Define a User model
-class User (db.Model):
+@dc.dataclass()
+class User:
+    name:str
+    telephone: str
+    password: str
+    desc: str = dc.field(default="default description")
+    _id: ObjectId = dc.field(default_factory=ObjectId)
 
-    __tablename__   : str = "user"
-    id              : db.Integer = db.Column(db.Integer, primary_key=True)
-
-    # User Name
-    name            : db.String = db.Column(db.String(128), nullable=True)
-
-    # Identification Data: email & telephone & password & id on server
-    email           : db.String = db.Column(db.String(128), nullable=True, unique=True)
-    telephone       : db.String = db.Column(db.String(15), nullable=False, unique=True)
-    password        : db.String = db.Column(db.String(128), nullable=True)
-
-    # Attributes
-    description     : db.String = db.Column(db.String(255), nullable=True)
-
-    # Foreign Keys
-    # messages        : any = db.relationship("Message", backref="sender")
-
-    def __repr__ (self) -> str:
-        return f"<User {self.name}>"
+    def to_insert (self) -> dict[str, Any]:
+        return {
+            field.name: self.__getattribute__(field.name)
+            for field in dc.fields(User)
+        }

@@ -24,9 +24,9 @@ time.sleep(5)
 print()
 
 chat = Chat.query.filter_by(name=chat_name).one()
-print(chat.id)
+print(chat._id)
 print("sending messages")
-api.send_message(chat.id, "oi bob", debug=True)
+api.send_message(chat._id, "oi bob", debug=True)
 
 time.sleep(3)
 print()
@@ -36,12 +36,12 @@ time.sleep(5)
 print()
 
 print("sending message")
-api.send_message(chat.id, "te odeio bob", debug=True)
+api.send_message(chat._id, "te odeio bob", debug=True)
 time.sleep(5)
 print()
 
 print("sending message")
-api.send_message(chat.id, "brinks", debug=True)
+api.send_message(chat._id, "brinks", debug=True)
 time.sleep(5)
 print()
 

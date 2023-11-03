@@ -5,6 +5,7 @@ Flask-Migrate>=3.0.1
 python-dotenv>=0.17.1
 cryptography>=36.0.0
 python-socketio>=5.5.0
+gevent-websocket==0.10.1
 websocket-client
 dataclasses
 flask_cors

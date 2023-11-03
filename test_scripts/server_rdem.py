@@ -26,7 +26,7 @@ time.sleep(5)
 
 print("sending message")
 chat = Chat.query.filter_by(name=chat_name).one()
-api.send_message(chat.id, "eai alicee! tudo bem?", debug=True)
+api.send_message(chat._id, "eai alicee! tudo bem?", debug=True)
 
 time.sleep(10)
 api.logout()

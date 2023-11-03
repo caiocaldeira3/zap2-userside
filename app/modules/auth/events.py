@@ -1,10 +1,8 @@
-from typing import Union
-
-from app import api, db, job_queue, sio
-from app.models.user import User
+from app import api, job_queue, sio
+from app.services import user as ussr
 from app.util.jobs import RefreshJob
 
-ResponseData = dict[str, Union[str, dict[str, str]]]
+ResponseData = dict[str, str | dict[str, str]]
 
 @sio.on("connect")
 def handle_connect () -> None:
@@ -25,8 +23,7 @@ def handle_auth_response (resp: dict):
         if resp.get("data", None) is not None:
             telephone = resp["data"]["telephone"]
 
-            User.query.filter_by(telephone=telephone).delete()
-            db.session.commit()
+            ussr.delete_user(telephone)
 
 @sio.event
 def disconnect ():

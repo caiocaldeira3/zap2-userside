@@ -1,27 +1,20 @@
 import asyncio
 import dataclasses as dc
-import fileinput
-import os
 import time
 from enum import Enum, auto
-from pathlib import Path
 
-import dotenv
-import regex as re
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
 from socketio.exceptions import ConnectionError
 from sqlalchemy.exc import NoResultFound
 from werkzeug.security import generate_password_hash
 
-base_path = Path(__file__).resolve().parent.parent.parent
-dotenv.load_dotenv(base_path / ".env", override=True)
-
-import app.util.crypto as crypto
-import app.util.jobs as jobs
-from app import db, job_queue, sio
+from app import job_queue, sio
 from app.models.chat import Chat
 from app.models.user import User
+from app.services import chat as chsr
+from app.services import user as ussr
+from app.util import config, crypto, jobs
 
 
 class ConnectionResults (Enum):
@@ -31,7 +24,6 @@ class ConnectionResults (Enum):
 
 @dc.dataclass()
 class Api:
-
     base_url: str = dc.field(init=False, default="http://0.0.0.0:5000")
     headers_client: dict = dc.field(init=False, default=None)
     headers_user: dict = dc.field(init=False, default=None)
@@ -43,11 +35,11 @@ class Api:
 
     def __init__ (self, logged_in: bool = False) -> None:
         self.headers_client = {
-            "Param-Auth": os.environ["CHAT_SECRET"]
+            "Param-Auth": config.CHAT_SECRET
         }
         self.headers_user = self.headers_client
 
-        if logged_in and os.environ["USER_ID"] != -1:
+        if logged_in and config.USER_ID != -1:
             self.login()
 
         elif logged_in:
@@ -55,7 +47,7 @@ class Api:
             raise Exception
 
     def _setup_user (self) -> None:
-        self.user_id = os.environ["USER_ID"]
+        self.user_id = config.USER_ID
         self.id_key = crypto.load_private_key("id_key")
         self.sgn_key = crypto.load_private_key("sgn_key")
         self.ed_key = crypto.load_private_key("ed_key")
@@ -69,14 +61,6 @@ class Api:
         self.ed_key = None
 
         self._update_header_user(logout=True)
-
-    def _update_enviroment (self, key: str, value: str) -> None:
-        environ_regex = re.compile(f"(?<={key}=).*")
-        os.environ[key] = str(value)
-
-        with fileinput.FileInput(base_path / ".env", inplace=True, backup=".bak") as env:
-            for line in env:
-                print(environ_regex.sub(f"{value}", line), end="")
 
     def _update_header_user (self, logout: bool = False) -> None:
         if logout:
@@ -102,7 +86,7 @@ class Api:
     def login (self) -> ConnectionResults:
         try:
             self._setup_user()
-            user = User.query.filter_by(id=self.user_id).one()
+            user = ussr.find_with_id(self.user_id)
 
             sio.connect(
                 self.base_url,
@@ -148,10 +132,9 @@ class Api:
                 telephone=telephone,
                 password=generate_password_hash(password)
             )
-            db.session.add(user)
-            db.session.commit()
+            ussr.insert_user(user)
 
-            self.user_id = user.id
+            self.user_id = user._id
 
             sio.connect(
                 self.base_url,
@@ -166,13 +149,13 @@ class Api:
             )
 
             self._update_header_user()
-            self._update_enviroment("USER_ID", self.user_id)
+            config.update_user_id(self.user_id)
 
             return ConnectionResults.SUCESSFUL
 
-        except ConnectionError:
-            User.query.filter_by(id=user.id).delete()
-            db.session.commit()
+        except ConnectionError as exc:
+            ussr.delete_user(user.telephone)
+            print(exc)
 
             self._setdown_user()
 
@@ -182,28 +165,17 @@ class Api:
         self, name: str, users: list[str], description: str = None
     ) -> ConnectionResults:
         try:
-            owner = User.query.filter_by(id=self.user_id).one()
-
-            db_users = []
-            for user in users:
-                db_user = User.query.filter_by(telephone=user).first()
-                if db_user is None:
-                    db_user = User(telephone=user)
-
-                    db.session.add(db_user)
-
-                db_users.append(db_user)
+            owner = ussr.find_with_id(self.user_id)
 
             chat = Chat(
                 name=name,
-                users=db_users,
-                description=description
+                users=users,
+                desc=description
             )
-            db.session.add(chat)
-            db.session.commit()
+            chsr.insert_chat(chat)
 
-            eph_key = crypto.generate_private_key(f"eph-{chat.id}-{self.user_id}")
-            dh_ratchet = crypto.generate_private_key(f"dhr-{chat.id}-{self.user_id}")
+            eph_key = crypto.generate_private_key(f"eph-{chat._id}-{self.user_id}")
+            dh_ratchet = crypto.generate_private_key(f"dhr-{chat._id}-{self.user_id}")
 
             data = {
                 "Signed-Message": self.sign_message(),
@@ -211,7 +183,7 @@ class Api:
                 "body": {
                     "owner": {
                         "telephone": owner.telephone,
-                        "chat_id": chat.id
+                        "chat_id": str(chat._id)
                     },
                     "name": name,
                     "users": users,
@@ -225,17 +197,19 @@ class Api:
 
         except ConnectionRefusedError:
             print("Retry creating the chatroom")
-            job_queue.add_job(self.user_id, 1, jobs.CreateChatJob, data=data, chat_id=chat.id)
+            job_queue.add_job(self.user_id, 1, jobs.CreateChatJob, data=data, chat_id=chat._id)
 
             return ConnectionResults.RETRY
 
         except Exception as exc:
+            print(exc)
+
             return ConnectionResults.FAILED
 
     def send_message (self, chat_id: int, msg: str, debug: bool = False) -> ConnectionResults:
         try:
-            owner = User.query.filter_by(id=self.user_id).one()
-            chat = Chat.query.filter_by(id=chat_id).one()
+            owner = ussr.find_with_id(self.user_id)
+            chat = chsr.find_with_id(chat_id)
 
             ratchets, pbkey = crypto.load_ratchets(chat_id)
             bmsg = bytes(msg, encoding="utf-8")
@@ -252,11 +226,11 @@ class Api:
                 "body": {
                     "sender": {
                         "telephone": owner.telephone,
-                        "chat_id": chat.id
+                        "chat_id": str(chat._id)
                     },
                     "receiver": {
-                        "telephone": chat.users[0].telephone,
-                        "chat_id": chat.chat_id
+                        "telephone": chat.users[0],
+                        "chat_id": str(chat.back_id)
                     },
                     "cipher": crypto.decode_b64(cipher),
                     "dh_ratchet": new_ratchet_pbkey
@@ -272,7 +246,7 @@ class Api:
             return ConnectionResults.SUCESSFUL
 
         except ConnectionRefusedError:
-            job_queue.add_job(self.user_id, 2, jobs.SendMessageJob, data, chat.id)
+            job_queue.add_job(self.user_id, 2, jobs.SendMessageJob, data, chat._id)
 
             return ConnectionResults.RETRY
 
