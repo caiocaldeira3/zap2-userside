@@ -2,7 +2,7 @@ import dataclasses as dc
 
 from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
 
-from app.util.crypto import PrivateKey, PublicKey
+from app.util.crypto import PrivateKey, PublicKey, SymmetricRatchet
 
 
 class Keyzeds:
@@ -10,14 +10,14 @@ class Keyzeds:
         return {
             field.name: self.__getattribute__(field.name)
             for field in dc.fields(self)
-            if self.__getattribute__(field.name) is not None
+            if isinstance(self.__getattribute__(field.name), X25519PrivateKey)
         }
 
     def public_keys (self) -> dict[str, PublicKey]:
         return {
             field.name: self.__getattribute__(field.name).public_key()
             for field in dc.fields(self)
-            if self.__getattribute__(field.name) is not None
+            if isinstance(self.__getattribute__(field.name), X25519PrivateKey)
         }
 
 @dc.dataclass()
