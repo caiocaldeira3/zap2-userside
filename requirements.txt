@@ -11,3 +11,4 @@ flask_cors
 requests
 regex
 pytz
+bson
