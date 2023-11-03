@@ -34,3 +34,32 @@ def test_create_chat_encryption_calls_receiver_x3dh_for_receiver () -> None:
 
         send_method.assert_not_called()
         rcv_method.assert_called_once()
+
+def test_root_ratchet_after_next_equal_for_alice_and_bob () -> None:
+    alice = Alice()
+    bob = Bob()
+
+    ratchet_alice = create_chat_encryption(
+        alice.private_keys(), bob.public_keys(), True
+    )
+    ratchet_bob = create_chat_encryption(
+        bob.private_keys(), alice.public_keys(), False
+    )
+
+    assert ratchet_alice.next() == ratchet_bob.next()
+
+def test_root_ratchet_after_next_state_equal_for_alice_and_bob () -> None:
+    alice = Alice()
+    bob = Bob()
+
+    ratchet_alice = create_chat_encryption(
+        alice.private_keys(), bob.public_keys(), True
+    )
+    ratchet_bob = create_chat_encryption(
+        bob.private_keys(), alice.public_keys(), False
+    )
+
+    ratchet_alice.next()
+    ratchet_bob.next()
+
+    assert ratchet_alice.state == ratchet_bob.state
