@@ -1,5 +1,6 @@
 import dataclasses as dc
 
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
 
 from app.util.crypto import PrivateKey, PublicKey, SymmetricRatchet
@@ -39,6 +40,8 @@ class Alice (Keyzeds):
     IK: X25519PrivateKey = dc.field(default_factory=X25519PrivateKey.generate)
     EK: X25519PrivateKey = dc.field(default_factory=X25519PrivateKey.generate)
 
+    SGN_KEY: Ed25519PrivateKey = dc.field(default_factory=Ed25519PrivateKey.generate)
+
 @dc.dataclass()
 class Bob (Keyzeds):
     IK: X25519PrivateKey = dc.field(default_factory=X25519PrivateKey.generate)
@@ -54,6 +57,8 @@ class Eve (Keyzeds):
     EK: X25519PrivateKey = dc.field(default_factory=X25519PrivateKey.generate)
     SPK: X25519PrivateKey = dc.field(default_factory=X25519PrivateKey.generate)
     OPK: X25519PrivateKey = dc.field(default_factory=X25519PrivateKey.generate)
+
+    SGN_KEY: Ed25519PrivateKey = dc.field(default_factory=Ed25519PrivateKey.generate)
 
     def __post_init__ (self) -> None:
         self.ratchet.dh_ratchet = X25519PrivateKey.generate()
