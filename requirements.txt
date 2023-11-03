@@ -12,3 +12,4 @@ requests
 regex
 pytz
 bson
+pymongo
