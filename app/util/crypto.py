@@ -42,6 +42,7 @@ Key = Union[PrivateKey, PublicKey, SymmetricRatchet]
 
 def ensure_dir (file_path: str) -> None:
     directory = os.path.dirname(file_path)
+
     if not os.path.exists(directory):
         os.makedirs(directory)
 
@@ -111,12 +112,16 @@ def create_chat_encryption (
     pvt_keys: dict[str, PrivateKey], pb_keys: dict[str, PublicKey], sender: bool
 ) -> SymmetricRatchet:
     pb_keys = {
-        key: X25519PublicKey.from_public_bytes(encode_b64(value))
-        for key, value in pb_keys.items()
+        key: (
+            X25519PublicKey.from_public_bytes(encode_b64(value))
+            if not isinstance(value, X25519PublicKey) else
+            value
+        ) for key, value in pb_keys.items()
     }
 
     if sender:
         shared_key = sender_x3dh(sender_keys=pvt_keys, recv_keys=pb_keys)
+
     else:
         shared_key = receiver_x3dh(sender_keys=pb_keys, recv_keys=pvt_keys)
 
@@ -256,10 +261,8 @@ def load_public_key (pbkey: str, sgn_key: bool = False) -> PublicKey:
     else:
         return X25519PublicKey.from_public_bytes(encode_b64(pbkey))
 
-def sign_message (pvtkey: Ed25519PrivateKey) -> str:
-    return decode_b64(
-        pvtkey.sign(b"It's me, Mario")
-    ).replace("\r", "").replace("\n", "")
+def sign_message (pvtkey: Ed25519PrivateKey, msg: bytes = b"It's me, Mario") -> str:
+    return decode_b64(pvtkey.sign(msg)).replace("\r", "").replace("\n", "")
 
 def load_private_key (name: str) -> PrivateKey:
     return load_key_from_file(keys_path, name)
@@ -268,6 +271,7 @@ def clean_keys () -> None:
     for item in os.listdir(keys_path):
         if item.endswith(".pem"):
             os.remove(keys_path / item)
+
     shutil.rmtree(ratchets_path, ignore_errors=True)
 
 def clean_chat_keys (chat_id: int, user_id: int) -> None:

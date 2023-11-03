@@ -79,6 +79,7 @@ while True:
     if sender == "alice":
         ratchets_alice = ratchets_sender
         ratchets_bob = ratchets_receiver
+
     else:
         ratchets_alice = ratchets_receiver
         ratchets_bob = ratchets_sender
