@@ -29,7 +29,7 @@ def test_create_chat_encryption_calls_receiver_x3dh_for_receiver () -> None:
         patch("app.util.crypto.receiver_x3dh") as rcv_method
     ):
         create_chat_encryption(
-            alice.private_keys(), bob.public_keys(), True
+            bob.private_keys(), alice.public_keys(), False
         )
 
         send_method.assert_not_called()
