@@ -1,5 +1,7 @@
 # Zap2-Userside
 
+Nomes: Caio Alves Caldeira | Rainer Menezes Vieira Silva
+
 Este projeto visa simular uma aplicação de chat com criptografia de ponta-a-ponta rodando através de um servidor websocket. Para isso, foi implementada a Double Ratchet Encryption (Criptografia de Catraca Dupla), implementada de acordo com a ótima explicação do post https://nfil.dev/coding/encryption/python/double-ratchet-example/.
 
 As ferramentas mais utilizadas pelo projeto são
